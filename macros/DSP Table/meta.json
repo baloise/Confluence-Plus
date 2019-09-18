@@ -1,0 +1,7 @@
+{
+ "Key" : "default-space-permissions-table",
+ "Description" : "Renders default space permissions as table",
+ "Body type" : "None",
+ "Output type" : "Block",
+ "Parameters" : []
+}
