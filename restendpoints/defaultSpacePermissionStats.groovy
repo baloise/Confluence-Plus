@@ -17,6 +17,8 @@ import com.atlassian.confluence.setup.bandana.ConfluenceBandanaContext
 import com.atlassian.confluence.security.SpacePermissionManager
 import com.onresolve.scriptrunner.runner.ScriptRunnerImpl
 import com.atlassian.sal.api.ApplicationProperties
+import com.atlassian.confluence.user.AuthenticatedUserThreadLocal
+import com.atlassian.confluence.user.ConfluenceUser
 
 
 @BaseScript CustomEndpointDelegate delegate
@@ -107,7 +109,7 @@ private fixMissingPermissions(Map<String, List<String>> defaultPermissions, Spac
     }
 }
 
-private Map getCurrent() {
+private Map getCurrent(String user = null) {
     Map<String, List<String>>  defaultPermissions = loadDefaultPermissions()
     SpaceManager spaceMan = com.atlassian.sal.api.component.ComponentLocator.getComponent(SpaceManager.class)
     List<Space> allSpaces = spaceMan.allSpaces.findAll {!it.personal}
@@ -115,7 +117,7 @@ private Map getCurrent() {
     allSpaces = allSpaces.findAll {!isIgnored(it)}
     long potential = defaultPermissions.values().flatten().size() * allSpaces.size()
     long missing = allSpaces.collect { countMissingPermissions(deepCopy(defaultPermissions), it) }.sum() as Long
-    return [actual: potential-missing, target: potential,ignored: ignored, date : new Date()]
+    return [actual: potential-missing, target: potential,ignored: ignored, date : new Date(), user:user]
 }
 
 defaultSpacePermissionStats(httpMethod: "GET", groups: ["confluence-users"]) { MultivaluedMap queryParams, String body ->
@@ -143,7 +145,8 @@ defaultSpacePermissionStats(httpMethod: "GET", groups: ["confluence-users"]) { M
                 log ++
             }
         }
-        if(log) saveStats(getCurrent())
+        if(log) saveStats(getCurrent(AuthenticatedUserThreadLocal.get().fullName))
+        
         
 		def props = ScriptRunnerImpl.getOsgiService(ApplicationProperties)
         String spacekeyProp = "default.permissions.template.space.key"
@@ -165,3 +168,5 @@ defaultSpacePermissionStats(httpMethod: "GET", groups: ["confluence-users"]) { M
     }
     return ok(new JsonBuilder(loadStats()))
 }
+
+
