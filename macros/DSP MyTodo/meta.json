@@ -2,7 +2,7 @@
  "Key" : "default-space-permissions-my-todo",
  "Description" : "Renders my spaces compliance overview",
  "Body type" : "None",
- "Output type" : "Block",
+ "Output type" : "Inline",
  "Parameters" : [],
  "Lazy loaded" : true
 }
