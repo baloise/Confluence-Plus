@@ -203,13 +203,10 @@ private String getConfigKey(String config){
     def v = bandanaMan().getValue(GLOBAL_CONTEXT, "default.permissions.template.${config}.key")
     return v ? v.toString() : configDefaults()[config] 
 }
-conf = null
+
 private Map loadConf(){
-    if(!conf) {
-		Page page = pageMan().getPage(getConfigKey('space'), getConfigKey('page'))
-		conf = new XmlSlurper().parseText("<p>${page.bodyAsString}</p>").table.tbody.tr.collectEntries{[(it.th.toString().trim()) : (it.td.toString().trim())]}
-    }
-	conf as Map
+    Page page = pageMan().getPage(getConfigKey('space'), getConfigKey('page'))
+	new XmlSlurper().parseText("<p>${page.bodyAsString}</p>").table.tbody.tr.collectEntries{[(it.th.toString().trim()) : (it.td.toString().trim())]}
 }
 
 private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, String body){
