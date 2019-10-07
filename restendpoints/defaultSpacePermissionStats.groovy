@@ -272,7 +272,6 @@ private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, Strin
         return ok(new JsonBuilder([current]))
     }
     if(queryParams.containsKey("find")) {
-        //return ok(getSpaceOwners(spaceMan().getSpace('DEOIS3')).toString())
         return ok(new JsonBuilder(identifyOwnersOfNonCompliantSpaces()))
     }
     return ok(new JsonBuilder(loadStats()))
