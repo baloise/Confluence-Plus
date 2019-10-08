@@ -25,10 +25,26 @@ import com.atlassian.user.GroupManager
 import com.atlassian.user.Group
 import com.atlassian.confluence.pages.Page
 import com.atlassian.confluence.pages.PageManager
+import com.atlassian.user.UserManager
+import com.atlassian.user.User
 import static com.atlassian.sal.api.component.ComponentLocator.getComponent
 
+import com.onresolve.scriptrunner.runner.customisers.PluginModule
+import com.onresolve.scriptrunner.runner.customisers.WithPlugin
+import com.atlassian.mywork.host.service.LocalNotificationServiceImpl
+import com.atlassian.mywork.model.NotificationBuilder
 
-// ---- TYPED BINDING ACCESS 
+import com.atlassian.mail.server.MailServerManager
+import com.atlassian.mail.server.SMTPMailServer
+import com.atlassian.mail.Email
+
+
+// ---- TYPED BINDING ACCESS
+
+@WithPlugin("com.atlassian.mywork.mywork-confluence-host-plugin")
+@PluginModule LocalNotificationServiceImpl notificationService
+binding.setProperty('notificationService', notificationService)
+private LocalNotificationServiceImpl notificationService(){binding.getProperty('notificationService') as LocalNotificationServiceImpl}
 
 spaceMan = getComponent(SpaceManager.class)
 private SpaceManager spaceMan(){spaceMan as SpaceManager}
@@ -42,18 +58,25 @@ private BandanaManager bandanaMan(){bandanaMan as BandanaManager}
 pageMan = getComponent(PageManager.class)
 private PageManager pageMan(){pageMan as PageManager}
 
+userMan = getComponent(UserManager.class)
+private UserManager userMan(){userMan as UserManager}
+
+// this can't be accessed from inside the REST code
+notificationBuilder = new NotificationBuilder()
+private NotificationBuilder notificationBuilder(){notificationBuilder as NotificationBuilder}
+
 // ----
 
 
 @BaseScript CustomEndpointDelegate delegate
 
 private boolean currentUserIsAdmin(){
-    getComponent(PermissionManager.class).isSystemAdministrator(AuthenticatedUserThreadLocal.get())
+	getComponent(PermissionManager.class).isSystemAdministrator(AuthenticatedUserThreadLocal.get())
 }
 
 private boolean currentUserIsMember(String group){
-   	GroupManager groupMan = getComponent(GroupManager.class)
-   	groupMan.hasMembership(groupMan.getGroup(group), AuthenticatedUserThreadLocal.get())
+	   GroupManager groupMan = getComponent(GroupManager.class)
+	   groupMan.hasMembership(groupMan.getGroup(group), AuthenticatedUserThreadLocal.get())
 }
 
 private Response status(int code, String message) {
@@ -70,66 +93,66 @@ private Response ok(JsonBuilder jsonb) {
 
 lazyDefaultPermissions = null
 private Map<String, List<String>> loadDefaultPermissions() {
-    if(!lazyDefaultPermissions){   
-    Space defaultPermissionsSpace = spaceMan().getSpace(getConfigKey('space'))
-    lazyDefaultPermissions = (Map<String, List<String>>) defaultPermissionsSpace.getPermissions()
-    	.findAll{it.group}
-        .groupBy{it.group}
-    	.collectEntries { group, permission ->
-    		[group, permission.type]
+	if(!lazyDefaultPermissions){
+	Space defaultPermissionsSpace = spaceMan().getSpace(getConfigKey('space'))
+	lazyDefaultPermissions = (Map<String, List<String>>) defaultPermissionsSpace.getPermissions()
+		.findAll{it.group}
+		.groupBy{it.group}
+		.collectEntries { group, permission ->
+			[group, permission.type]
 		}
-    }
-    return lazyDefaultPermissions as Map<String, List<String>>
+	}
+	return lazyDefaultPermissions as Map<String, List<String>>
 }
 
 private List<Map> loadStats() {
-    String statskeyProp = "default.permissions.stats.key"
-    (bandanaMan().getValue(GLOBAL_CONTEXT, statskeyProp) ?: []) as List<Map> 
+	String statskeyProp = "default.permissions.stats.key"
+	(bandanaMan().getValue(GLOBAL_CONTEXT, statskeyProp) ?: []) as List<Map>
 }
 
 private void resetStats() {
-    String statskeyProp = "default.permissions.stats.key"
-    bandanaMan().removeValue(GLOBAL_CONTEXT, statskeyProp)
+	String statskeyProp = "default.permissions.stats.key"
+	bandanaMan().removeValue(GLOBAL_CONTEXT, statskeyProp)
 }
 
 private saveStats(Map current) {
-    String statskeyProp = "default.permissions.stats.key"
-    List<Map> history = loadStats()
-    if(history) {
-        if(history[-1].actual != current.actual || history[-1].target != current.target || history[-1].ignored != current.ignored){
-          history.add current
-          bandanaMan().setValue(GLOBAL_CONTEXT, statskeyProp, history)
-        } 
-    } else {
-        history = [current]
-        bandanaMan().setValue(GLOBAL_CONTEXT, statskeyProp, history)
-    }
+	String statskeyProp = "default.permissions.stats.key"
+	List<Map> history = loadStats()
+	if(history) {
+		if(history[-1].actual != current.actual || history[-1].target != current.target || history[-1].ignored != current.ignored){
+		  history.add current
+		  bandanaMan().setValue(GLOBAL_CONTEXT, statskeyProp, history)
+		}
+	} else {
+		history = [current]
+		bandanaMan().setValue(GLOBAL_CONTEXT, statskeyProp, history)
+	}
 }
 
 private <T> T deepCopy(T object){
-    evaluate(object.inspect()) as T
+	evaluate(object.inspect()) as T
 }
 
 private setIgnored(Space space, boolean ignored) {
-    String ignoredKeyProp = "default.permissions.ignore"
-    bandanaMan().setValue(new ConfluenceBandanaContext(space), ignoredKeyProp, ignored)
+	String ignoredKeyProp = "default.permissions.ignore"
+	bandanaMan().setValue(new ConfluenceBandanaContext(space), ignoredKeyProp, ignored)
 }
 
 private boolean isIgnored(Space space) {
-    String ignoredKeyProp = "default.permissions.ignore"
-    bandanaMan().getValue(new ConfluenceBandanaContext(space), ignoredKeyProp)
+	String ignoredKeyProp = "default.permissions.ignore"
+	bandanaMan().getValue(new ConfluenceBandanaContext(space), ignoredKeyProp)
 }
 
 private long countMissingPermissions(Map<String, List<String>> defaultPermissions, Space space) {
-    space.permissions.findAll{it.groupPermission}
-        .each { perm -> defaultPermissions[perm.group]?.remove(perm.type)}
-    defaultPermissions.values().flatten().size()
+	space.permissions.findAll{it.groupPermission}
+		.each { perm -> defaultPermissions[perm.group]?.remove(perm.type)}
+	defaultPermissions.values().flatten().size()
 }
 
 private Set<String> drawOwners(Map<Space,List<String>> space2owners, Map<String,List<Space>> owner2spaces){
 	Set<String> ret = []
-	Set<Space> done = new TreeSet({s1,s2-> s1.key.compareTo(s2.key)}) 
-	space2owners.each { space, owners -> 
+	Set<Space> done = new TreeSet({s1,s2-> s1.key.compareTo(s2.key)})
+	space2owners.each { space, owners ->
 		if(done.contains(space)) return
 		Collections.shuffle owners
 		String owner = owners.first()
@@ -141,58 +164,58 @@ private Set<String> drawOwners(Map<Space,List<String>> space2owners, Map<String,
 }
 
 private Set<String> identifyOwnersOfNonCompliantSpaces() {
-    Map<String, List<String>>  defaultPermissions = loadDefaultPermissions()
-    Map<String,List<Space>> owner2spaces = [:]
-    List<Space> nonComliantSpaces = spaceMan().allSpaces.findAll {!it.personal && !isIgnored(it) && !isCompliant(deepCopy(defaultPermissions), it)}
-    Map<Space,List<String>> space2owners = nonComliantSpaces.collectEntries{ space ->
-        List<String> owners = getSpaceOwners(space)
-        owners.each {owner2spaces.get(it,[]).add(space)}
-        [space, owners]
-    }
-    return drawOwners(space2owners, owner2spaces)
+	Map<String, List<String>>  defaultPermissions = loadDefaultPermissions()
+	Map<String,List<Space>> owner2spaces = [:]
+	List<Space> nonComliantSpaces = spaceMan().allSpaces.findAll {!it.personal && !isIgnored(it) && !isCompliant(deepCopy(defaultPermissions), it)}
+	Map<Space,List<String>> space2owners = nonComliantSpaces.collectEntries{ space ->
+		List<String> owners = getSpaceOwners(space)
+		owners.each {owner2spaces.get(it,[]).add(space)}
+		[space, owners]
+	}
+	return drawOwners(space2owners, owner2spaces)
 }
 
 groupUserCache = [:]
 private List<String> getUsers(String groupName) {
-    if(!groupName) return ['admin']
-    if(!groupUserCache[groupName]) {
-        Group group =  groupMan().getGroup(groupName)
-        groupUserCache[groupName] = group ? groupMan().getMemberNames(group).collect{it} : ['admin']
-    }
-    groupUserCache[groupName]
+	if(!groupName) return ['admin']
+	if(!groupUserCache[groupName]) {
+		Group group =  groupMan().getGroup(groupName)
+		groupUserCache[groupName] = group ? groupMan().getMemberNames(group).collect{it} : ['admin']
+	}
+	groupUserCache[groupName]
 }
 
 private List<String> getSpaceOwners(Space space) {
-    space.permissions.findAll{it.type == 'SETSPACEPERMISSIONS'}.collect{
-        it.userPermission ? it.userName : getUsers(it.group)
-    }.flatten().unique() as List<String>
+	space.permissions.findAll{it.type == 'SETSPACEPERMISSIONS'}.collect{
+		it.userPermission ? it.userName : getUsers(it.group)
+	}.flatten().unique() as List<String>
 }
 private boolean isCompliant(Map<String, List<String>> defaultPermissions, Space space) {
-    countMissingPermissions(defaultPermissions, space) == 0
+	countMissingPermissions(defaultPermissions, space) == 0
 }
 
 private fixMissingPermissions(Map<String, List<String>> defaultPermissions, Space space) {
-    SpacePermissionManager spMan = com.atlassian.sal.api.component.ComponentLocator.getComponent(SpacePermissionManager.class)
-    space.permissions.findAll{it.groupPermission}
-        .each { perm -> defaultPermissions[perm.group]?.remove(perm.type)}
-    defaultPermissions.each{group, permissions -> 
-        permissions.each { permission -> 
-            spMan.savePermission(SpacePermission.createGroupSpacePermission(permission, space, group))
-        }
-    }
+	SpacePermissionManager spMan = com.atlassian.sal.api.component.ComponentLocator.getComponent(SpacePermissionManager.class)
+	space.permissions.findAll{it.groupPermission}
+		.each { perm -> defaultPermissions[perm.group]?.remove(perm.type)}
+	defaultPermissions.each{group, permissions ->
+		permissions.each { permission ->
+			spMan.savePermission(SpacePermission.createGroupSpacePermission(permission, space, group))
+		}
+	}
 }
 
 private Map getCurrent(String user = null) {
-    long start = System.currentTimeMillis()
-    Map<String, List<String>>  defaultPermissions = loadDefaultPermissions()
-    List<Space> allSpaces = spaceMan().allSpaces.findAll {!it.personal}
-    List<Space> ignoredSpaces = allSpaces.findAll {isIgnored(it)}
-    
-    long ignored   = defaultPermissions.values().flatten().size() * ignoredSpaces.size()
-    allSpaces = allSpaces - ignoredSpaces
-    long potential = defaultPermissions.values().flatten().size() * allSpaces.size()
-    long missing = allSpaces.collect { countMissingPermissions(deepCopy(defaultPermissions), it) }.sum() as Long
-    return [actual: potential-missing, target: potential,ignored: ignored, date : new Date(), user:user, time : (System.currentTimeMillis()- start) ]
+	long start = System.currentTimeMillis()
+	Map<String, List<String>>  defaultPermissions = loadDefaultPermissions()
+	List<Space> allSpaces = spaceMan().allSpaces.findAll {!it.personal}
+	List<Space> ignoredSpaces = allSpaces.findAll {isIgnored(it)}
+	
+	long ignored   = defaultPermissions.values().flatten().size() * ignoredSpaces.size()
+	allSpaces = allSpaces - ignoredSpaces
+	long potential = defaultPermissions.values().flatten().size() * allSpaces.size()
+	long missing = allSpaces.collect { countMissingPermissions(deepCopy(defaultPermissions), it) }.sum() as Long
+	return [actual: potential-missing, target: potential,ignored: ignored, date : new Date(), user:user, time : (System.currentTimeMillis()- start) ]
 }
 defaultSpacePermissionStats(httpMethod: "GET") { MultivaluedMap queryParams, String body, HttpServletRequest request ->
  (request.remoteHost != '127.0.0.1' && !currentUserIsMember('confluence-users')) ? status(403, 'permission denied') : defaultSpacePermissionStatsDo(queryParams, body)
@@ -200,76 +223,116 @@ defaultSpacePermissionStats(httpMethod: "GET") { MultivaluedMap queryParams, Str
 
 private Map configDefaults(){['space' : 'About', 'page' : 'Confluence Default Space Permissions Config']}
 private String getConfigKey(String config){
-    def v = bandanaMan().getValue(GLOBAL_CONTEXT, "default.permissions.template.${config}.key")
-    return v ? v.toString() : configDefaults()[config] 
+	def v = bandanaMan().getValue(GLOBAL_CONTEXT, "default.permissions.template.${config}.key")
+	return v ? v.toString() : configDefaults()[config]
 }
 
-private Map loadConf(){
-    Page page = pageMan().getPage(getConfigKey('space'), getConfigKey('page'))
+private Map<String, String> loadConf(){
+	Page page = pageMan().getPage(getConfigKey('space'), getConfigKey('page'))
 	new XmlSlurper().parseText("<p>${page.bodyAsString}</p>").table.tbody.tr.collectEntries{[(it.th.toString().trim()) : (it.td.toString().trim())]}
 }
 
+private notify(String userKey, String receipient = null){
+	receipient = receipient ?: userMan().getUser(userKey).email
+	Map<String, String> conf = loadConf()
+	String message = conf.notificationMessage.replace('PAGE', "<a href=\"${getPageUrl('actionPage', conf)}\">${conf.actionPage}</a>")
+	notificationService().createOrUpdate(userKey, notificationBuilder()
+					.application('default.space.permissions') // a unique key that identifies your plugin
+					.title(conf.notificationTitle)
+					.itemTitle(conf.notificationTitle)
+					.description(message)
+					.groupingId('default.space.permissions') // a key to aggregate notifications
+					.createNotification()).get()
+	MailServerManager mailMan = getComponent(MailServerManager.class)
+	SMTPMailServer  mailServer = mailMan.defaultSMTPMailServer
+
+	if(mailServer){
+		String prefix = mailServer.prefix
+		mailServer.prefix = "[${conf.notificationPrefix}] "
+		mailServer.send(
+							new Email(receipient)
+							.setSubject(conf.notificationTitle)
+							.setBody(message)
+							.setReplyTo(conf.notificationReplyTo)
+							.setMimeType("text/html")
+							)
+		mailServer.prefix = prefix
+	}
+}
+
+private String getPageUrl(String pageType, Map<String, String> conf = null){
+	def props = ScriptRunnerImpl.getOsgiService(ApplicationProperties)
+	String spaceKey = getConfigKey('space')
+	String pageKey =java.net.URLEncoder.encode((conf ?: loadConf())[pageType])
+	"$props.baseUrl/display/$spaceKey/$pageKey"
+}
+
 private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, String body){
-    if(queryParams.containsKey("config")) {
+	if(queryParams.containsKey("config")) {
 		String config = queryParams.getFirst('config')
 		String defaultValue = configDefaults()[config]
 		
-        String newValue = queryParams.getFirst("newValue")
-       	if(defaultValue && queryParams.containsKey("reset")){
-            newValue = defaultValue
-       	}
-        if(defaultValue && newValue){
-          	bandanaMan().setValue(GLOBAL_CONTEXT, "default.permissions.template.${config}.key", newValue)
-         	return ok(newValue)       
-       	}
-        if(defaultValue) {
-            return ok(getConfigKey(config))
-        } else {
-        	return ok(new JsonBuilder(loadConf())) 
-        }
+		String newValue = queryParams.getFirst("newValue")
+		   if(defaultValue && queryParams.containsKey("reset")){
+			newValue = defaultValue
+		   }
+		if(defaultValue && newValue){
+			  bandanaMan().setValue(GLOBAL_CONTEXT, "default.permissions.template.${config}.key", newValue)
+			 return ok(newValue)
+		   }
+		if(defaultValue) {
+			return ok(getConfigKey(config))
+		} else {
+			return ok(new JsonBuilder(loadConf()))
+		}
 	}
-    if(queryParams.containsKey("myTodo")) {
-        Map<String, List<String>>  defaultPermissions = loadDefaultPermissions()
-        
-        
-        def actions = queryParams.values().flatten().findAll{(it as String).startsWith('ra')}
-        actions.each {
-            String action = (it as String)[2..-1]
-            if(action.endsWith('Fix')) {
-                action = action[0..-4]
-                Space space = spaceMan().getSpace(action)
-                setIgnored(space, false)
-                fixMissingPermissions(deepCopy(defaultPermissions), space)
-            } else if(action.endsWith('Ignore')){ 
-                action = action[0..-7]
-                Space space = spaceMan().getSpace(action)
-                setIgnored(space, true)
-            } else if(action.endsWith('Remind')){ 
-                action = action[0..-7]
-                Space space = spaceMan().getSpace(action)
-                setIgnored(space, false)
-            }
-        }
-        if(actions) saveStats(getCurrent(AuthenticatedUserThreadLocal.get().fullName))
-        
-        
-		def props = ScriptRunnerImpl.getOsgiService(ApplicationProperties)
-        String spaceKey = getConfigKey('space')
-        String pageKey =java.net.URLEncoder.encode(loadConf().page)
-        return Response.temporaryRedirect(URI.create("$props.baseUrl/display/$spaceKey/$pageKey")).build()
-        
-    }
-    if(queryParams.containsKey("reset")) {
-        resetStats()
-        return ok("stats reset")
-    }
-    if(queryParams.containsKey("current")) {
-        Map current = getCurrent()
-        if(queryParams.containsKey("save")) saveStats(current)
-        return ok(new JsonBuilder([current]))
-    }
-    if(queryParams.containsKey("find")) {
-        return ok(new JsonBuilder(identifyOwnersOfNonCompliantSpaces()))
-    }
-    return ok(new JsonBuilder(loadStats()))
+	if(queryParams.containsKey("myTodo")) {
+		Map<String, List<String>>  defaultPermissions = loadDefaultPermissions()
+		
+		
+		def actions = queryParams.values().flatten().findAll{(it as String).startsWith('ra')}
+		actions.each {
+			String action = (it as String)[2..-1]
+			if(action.endsWith('Fix')) {
+				action = action[0..-4]
+				Space space = spaceMan().getSpace(action)
+				setIgnored(space, false)
+				fixMissingPermissions(deepCopy(defaultPermissions), space)
+			} else if(action.endsWith('Ignore')){
+				action = action[0..-7]
+				Space space = spaceMan().getSpace(action)
+				setIgnored(space, true)
+			} else if(action.endsWith('Remind')){
+				action = action[0..-7]
+				Space space = spaceMan().getSpace(action)
+				setIgnored(space, false)
+			}
+		}
+		if(actions) saveStats(getCurrent(AuthenticatedUserThreadLocal.get().fullName))
+		
+		return Response.temporaryRedirect(URI.create(getPageUrl('overviewPage'))).build()
+		
+	}
+	if(queryParams.containsKey("reset")) {
+		resetStats()
+		return ok("stats reset")
+	}
+	if(queryParams.containsKey("current")) {
+		Map current = getCurrent()
+		if(queryParams.containsKey("save")) saveStats(current)
+		return ok(new JsonBuilder([current]))
+	}
+	if(queryParams.containsKey("find")) {
+		Set<String> owners = identifyOwnersOfNonCompliantSpaces()
+		if(queryParams.containsKey("notify")) {
+			owners.each{notify(it)}
+			return ok(new JsonBuilder([notified : true, owners : owners]))
+		}
+		return ok(new JsonBuilder(owners))
+	}
+	if(queryParams.containsKey("notify")) {
+		notify(queryParams.getFirst('notify'))
+		return ok(new JsonBuilder([notified : queryParams.getFirst("notify")]))
+	}
+	return ok(new JsonBuilder(loadStats()))
 }
