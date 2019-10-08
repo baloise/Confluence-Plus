@@ -38,6 +38,10 @@ import com.atlassian.mail.server.MailServerManager
 import com.atlassian.mail.server.SMTPMailServer
 import com.atlassian.mail.Email
 
+import groovyx.net.http.ContentType
+import groovyx.net.http.HTTPBuilder
+import groovyx.net.http.Method
+
 
 // ---- TYPED BINDING ACCESS
 
@@ -308,7 +312,17 @@ private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, Strin
 				setIgnored(space, false)
 			}
 		}
-		if(actions) saveStats(getCurrent(AuthenticatedUserThreadLocal.get().fullName))
+        if(actions) {
+            def httpBuilder = new HTTPBuilder("http://localhost:8090")
+            def resp = httpBuilder.request(Method.GET, ContentType.JSON) {
+                uri.path = "/atlassian/rest/scriptrunner/latest/custom/defaultSpacePermissionStats"
+                uri.query = [current: AuthenticatedUserThreadLocal.get().fullName, save:true]
+                response.failure = { resp, reader ->
+                    
+                }
+            }
+        }
+        //saveStats(getCurrent(AuthenticatedUserThreadLocal.get().fullName))
 		
 		return Response.temporaryRedirect(URI.create(getPageUrl('overviewPage'))).build()
 		
@@ -323,12 +337,12 @@ private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, Strin
 		return ok(new JsonBuilder([current]))
 	}
 	if(queryParams.containsKey("find")) {
-		Set<String> owners = identifyOwnersOfNonCompliantSpaces()
-		if(queryParams.containsKey("notify")) {
-			owners.each{notify(it)}
+        Set<String> owners = identifyOwnersOfNonCompliantSpaces()
+        if(queryParams.containsKey("notify")) {
+            owners.each{notify(it)}
 			return ok(new JsonBuilder([notified : true, owners : owners]))
-		}
-		return ok(new JsonBuilder(owners))
+        }
+        return ok(new JsonBuilder(owners))
 	}
 	if(queryParams.containsKey("notify")) {
 		notify(queryParams.getFirst('notify'))
