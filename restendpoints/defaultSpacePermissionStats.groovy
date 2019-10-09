@@ -147,6 +147,12 @@ private boolean isIgnored(Space space) {
 	bandanaMan().getValue(new ConfluenceBandanaContext(space), ignoredKeyProp)
 }
 
+private Map<String, List<String>> getMissingPermissions(Map<String, List<String>> defaultPermissions, Space space) {
+	space.permissions.findAll{it.groupPermission}
+		.each { perm -> defaultPermissions[perm.group]?.remove(perm.type)}
+	defaultPermissions
+}
+
 private long countMissingPermissions(Map<String, List<String>> defaultPermissions, Space space) {
 	space.permissions.findAll{it.groupPermission}
 		.each { perm -> defaultPermissions[perm.group]?.remove(perm.type)}
@@ -272,7 +278,11 @@ private String getPageUrl(String pageType, Map<String, String> conf = null){
 }
 
 private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, String body){
-	if(queryParams.containsKey("config")) {
+    if(queryParams.containsKey("space")){
+    	Space space = spaceMan().getSpace(queryParams.getFirst('space').toString())
+        return ok(new JsonBuilder(getMissingPermissions(loadDefaultPermissions(), space)))
+    }
+    if(queryParams.containsKey("config")) {
 		String config = queryParams.getFirst('config')
 		String defaultValue = configDefaults()[config]
 		
@@ -313,6 +323,9 @@ private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, Strin
 			}
 		}
         if(actions) {
+			// in process won't work because of caches
+			// need to call myself via rest
+        	//saveStats(getCurrent(AuthenticatedUserThreadLocal.get().fullName))
             def httpBuilder = new HTTPBuilder("http://localhost:8090")
             def resp = httpBuilder.request(Method.GET, ContentType.JSON) {
                 uri.path = "/atlassian/rest/scriptrunner/latest/custom/defaultSpacePermissionStats"
@@ -322,7 +335,6 @@ private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, Strin
                 }
             }
         }
-        //saveStats(getCurrent(AuthenticatedUserThreadLocal.get().fullName))
 		
 		return Response.temporaryRedirect(URI.create(getPageUrl('overviewPage'))).build()
 		
@@ -332,7 +344,7 @@ private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, Strin
 		return ok("stats reset")
 	}
 	if(queryParams.containsKey("current")) {
-		Map current = getCurrent()
+		Map current = getCurrent(queryParams.getFirst('current')?:null)
 		if(queryParams.containsKey("save")) saveStats(current)
 		return ok(new JsonBuilder([current]))
 	}
