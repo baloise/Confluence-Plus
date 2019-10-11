@@ -173,10 +173,10 @@ private Set<String> drawOwners(Map<Space,List<String>> space2owners, Map<String,
 	return ret
 }
 
-private Set<String> identifyOwnersOfNonCompliantSpaces() {
+private Set<String> identifyOwnersOfNonCompliantSpaces(long max = Long.MAX_VALUE) {
 	Map<String, List<String>>  defaultPermissions = loadDefaultPermissions()
 	Map<String,List<Space>> owner2spaces = [:]
-	List<Space> nonComliantSpaces = spaceMan().allSpaces.findAll {!it.personal && !isIgnored(it) && !isCompliant(deepCopy(defaultPermissions), it)}
+	List<Space> nonComliantSpaces = spaceMan().allSpaces.findAll {max-- > 0 && !it.personal && !isIgnored(it) && !isCompliant(deepCopy(defaultPermissions), it)}
 	Map<Space,List<String>> space2owners = nonComliantSpaces.collectEntries{ space ->
 		List<String> owners = getSpaceOwners(space)
 		owners.each {owner2spaces.get(it,[]).add(space)}
@@ -243,9 +243,12 @@ private Map<String, String> loadConf(){
 }
 
 private notify(String userKey, String receipient = null){
-	receipient = receipient ?: userMan().getUser(userKey).email
+	User user = userMan().getUser(userKey)
+    receipient = receipient ?: user.email
 	Map<String, String> conf = loadConf()
-	String message = conf.notificationMessage.replace('PAGE', "<a href=\"${getPageUrl('actionPage', conf)}\">${conf.actionPage}</a>")
+	String message = conf.notificationMessage
+    						.replace('PAGE', "<a href=\"${getPageUrl('actionPage', conf)}\">${conf.actionPage}</a>")
+    						.replace('USER', user.fullName)
 	notificationService().createOrUpdate(userKey, notificationBuilder()
 					.application('default.space.permissions') // a unique key that identifies your plugin
 					.title(conf.notificationTitle)
@@ -258,14 +261,14 @@ private notify(String userKey, String receipient = null){
 
 	if(mailServer){
 		String prefix = mailServer.prefix
-		mailServer.prefix = "[${conf.notificationPrefix}] "
-		mailServer.send(
-							new Email(receipient)
+		if(conf.notificationPrefix) mailServer.prefix = "[${conf.notificationPrefix}] "
+        Email email = new Email(receipient)
 							.setSubject(conf.notificationTitle)
 							.setBody(message)
 							.setReplyTo(conf.notificationReplyTo)
 							.setMimeType("text/html")
-							)
+        if(conf.notificationBcc) email.bcc = conf.notificationBcc
+		mailServer.send(email)
 		mailServer.prefix = prefix
 	}
 }
@@ -349,7 +352,7 @@ private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, Strin
 		return ok(new JsonBuilder([current]))
 	}
 	if(queryParams.containsKey("find")) {
-        Set<String> owners = identifyOwnersOfNonCompliantSpaces()
+        Set<String> owners = identifyOwnersOfNonCompliantSpaces(queryParams.containsKey("max") ? queryParams.getFirst('max') as long : Long.MAX_VALUE)
         if(queryParams.containsKey("notify")) {
             owners.each{notify(it)}
 			return ok(new JsonBuilder([notified : true, owners : owners]))
