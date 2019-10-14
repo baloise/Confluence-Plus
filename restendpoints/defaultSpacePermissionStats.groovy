@@ -216,6 +216,7 @@ private fixMissingPermissions(Map<String, List<String>> defaultPermissions, Spac
 }
 
 private Map getCurrent(String user = null) {
+	if('true' == user.toLowerCase()) user = null
 	long start = System.currentTimeMillis()
 	Map<String, List<String>>  defaultPermissions = loadDefaultPermissions()
 	List<Space> allSpaces = spaceMan().allSpaces.findAll {!it.personal}

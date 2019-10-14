@@ -11,9 +11,9 @@ List events = []
 long actual = -1
 loadStats().each{
     if(it.actual > actual) {
-        if(it.user) events += "<li>${it.date.format('yyyy.MM.dd HH:mm')}: <b>${it.user}</b> added <b>${it.actual-actual}</b></li>"
-        actual = it.actual
+        if(it.user && 'true' != it.user.toLowerCase()) events += "<li>${it.date.format('yyyy.MM.dd HH:mm')}: <b>${it.user}</b> reached <b>${it.actual}</b></li>"
     }
+    actual = it.actual
 }
 if(!events) events += '<li>Be the first ;-)</li>'
 "<ul>${events.reverse().join('')}</ul>"
