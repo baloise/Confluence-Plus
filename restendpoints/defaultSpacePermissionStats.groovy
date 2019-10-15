@@ -113,7 +113,7 @@ private List<Map> loadStats() {
 	String statskeyProp = "default.permissions.stats.key"
 	(bandanaMan().getValue(GLOBAL_CONTEXT, statskeyProp) ?: []) as List<Map>
 }
-
+   
 private void resetStats() {
 	String statskeyProp = "default.permissions.stats.key"
 	bandanaMan().removeValue(GLOBAL_CONTEXT, statskeyProp)
@@ -215,8 +215,12 @@ private fixMissingPermissions(Map<String, List<String>> defaultPermissions, Spac
 	}
 }
 
+private unIgnoreAll(){
+	spaceMan().allSpaces.findAll {!it.personal}.each{setIgnored(it,false)}
+}
+
 private Map getCurrent(String user = null) {
-	if('true' == user.toLowerCase()) user = null
+	if('true' == user?.toLowerCase()) user = null
 	long start = System.currentTimeMillis()
 	Map<String, List<String>>  defaultPermissions = loadDefaultPermissions()
 	List<Space> allSpaces = spaceMan().allSpaces.findAll {!it.personal}
@@ -245,11 +249,11 @@ private Map<String, String> loadConf(){
 
 private notify(String userKey, String receipient = null){
 	User user = userMan().getUser(userKey)
-    receipient = receipient ?: user.email
+	receipient = receipient ?: user.email
 	Map<String, String> conf = loadConf()
 	String message = conf.notificationMessage
-    						.replace('PAGE', "<a href=\"${getPageUrl('actionPage', conf)}\">${conf.actionPage}</a>")
-    						.replace('USER', user.fullName)
+							.replace('PAGE', "<a href=\"${getPageUrl('actionPage', conf)}\">${conf.actionPage}</a>")
+							.replace('USER', user.fullName)
 	notificationService().createOrUpdate(userKey, notificationBuilder()
 					.application('default.space.permissions') // a unique key that identifies your plugin
 					.title(conf.notificationTitle)
@@ -263,12 +267,12 @@ private notify(String userKey, String receipient = null){
 	if(mailServer){
 		String prefix = mailServer.prefix
 		if(conf.notificationPrefix) mailServer.prefix = "[${conf.notificationPrefix}] "
-        Email email = new Email(receipient)
+		Email email = new Email(receipient)
 							.setSubject(conf.notificationTitle)
 							.setBody(message)
 							.setReplyTo(conf.notificationReplyTo)
 							.setMimeType("text/html")
-        if(conf.notificationBcc) email.bcc = conf.notificationBcc
+		if(conf.notificationBcc) email.bcc = conf.notificationBcc
 		mailServer.send(email)
 		mailServer.prefix = prefix
 	}
@@ -282,11 +286,15 @@ private String getPageUrl(String pageType, Map<String, String> conf = null){
 }
 
 private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, String body){
-    if(queryParams.containsKey("space")){
-    	Space space = spaceMan().getSpace(queryParams.getFirst('space').toString())
-        return ok(new JsonBuilder(getMissingPermissions(loadDefaultPermissions(), space)))
-    }
-    if(queryParams.containsKey("config")) {
+	if(queryParams.containsKey("unIgnoreAll")){
+		unIgnoreAll()
+		return ok('unignored all')
+	}
+	if(queryParams.containsKey("space")){
+		Space space = spaceMan().getSpace(queryParams.getFirst('space').toString())
+		return ok(new JsonBuilder(getMissingPermissions(loadDefaultPermissions(), space)))
+	}
+	if(queryParams.containsKey("config")) {
 		String config = queryParams.getFirst('config')
 		String defaultValue = configDefaults()[config]
 		
@@ -326,19 +334,19 @@ private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, Strin
 				setIgnored(space, false)
 			}
 		}
-        if(actions) {
+		if(actions) {
 			// in process won't work because of caches
 			// need to call myself via rest
-        	//saveStats(getCurrent(AuthenticatedUserThreadLocal.get().fullName))
-            def httpBuilder = new HTTPBuilder("http://localhost:8090")
-            def resp = httpBuilder.request(Method.GET, ContentType.JSON) {
-                uri.path = "/atlassian/rest/scriptrunner/latest/custom/defaultSpacePermissionStats"
-                uri.query = [current: AuthenticatedUserThreadLocal.get().fullName, save:true]
-                response.failure = { resp, reader ->
-                    
-                }
-            }
-        }
+			//saveStats(getCurrent(AuthenticatedUserThreadLocal.get().fullName))
+			def httpBuilder = new HTTPBuilder("http://localhost:8090")
+			def resp = httpBuilder.request(Method.GET, ContentType.JSON) {
+				uri.path = "/atlassian/rest/scriptrunner/latest/custom/defaultSpacePermissionStats"
+				uri.query = [current: AuthenticatedUserThreadLocal.get().fullName, save:true]
+				response.failure = { resp, reader ->
+					
+				}
+			}
+		}
 		
 		return Response.temporaryRedirect(URI.create(getPageUrl('overviewPage'))).build()
 		
@@ -353,16 +361,33 @@ private Response defaultSpacePermissionStatsDo(MultivaluedMap queryParams, Strin
 		return ok(new JsonBuilder([current]))
 	}
 	if(queryParams.containsKey("find")) {
-        Set<String> owners = identifyOwnersOfNonCompliantSpaces(queryParams.containsKey("max") ? queryParams.getFirst('max') as long : Long.MAX_VALUE)
-        if(queryParams.containsKey("notify")) {
-            owners.each{notify(it)}
+		Set<String> owners = identifyOwnersOfNonCompliantSpaces(queryParams.containsKey("max") ? queryParams.getFirst('max') as long : Long.MAX_VALUE)
+		if(queryParams.containsKey("notify")) {
+			owners.each{notify(it)}
 			return ok(new JsonBuilder([notified : true, owners : owners]))
-        }
-        return ok(new JsonBuilder(owners))
+		}
+		return ok(new JsonBuilder(owners))
 	}
 	if(queryParams.containsKey("notify")) {
 		notify(queryParams.getFirst('notify'))
 		return ok(new JsonBuilder([notified : queryParams.getFirst("notify")]))
 	}
-	return ok(new JsonBuilder(loadStats()))
+	if(queryParams.containsKey("remove")) {
+		int position = queryParams.getFirst('remove') as int
+		List<Map> stats = loadStats()
+		String statskeyProp = "default.permissions.stats.key"
+		bandanaMan().setValue(GLOBAL_CONTEXT, statskeyProp, stats - stats[position])
+		return ok(new JsonBuilder([removed : stats[position]]))
+	}
+	return queryParams.containsKey("html") ? statsAsHTML()  : ok(new JsonBuilder(loadStats()))
+}
+
+private Response statsAsHTML() {
+	String html = "<table border='1px'><thead><tr><th>count</th><th>date</th><th>actual</th><th>ignored</th><th>target</th><th>date</th><th>user</th><th>time</th></tr></thead><tbody>"
+	int count = 0
+	loadStats().each{
+		html += "<tr><td>${count++}</td><td>${it.date}</td><td>${it.actual}</td><td>${it.ignored}</td><td>${it.target}</td><td>${it.date}</td><td>${it.user}</td><td>${it.time}</td></tr>"
+	}
+	html += '</tbody></table>'
+	Response.ok(html).header("Content-Type", "text/html").build()
 }
