@@ -1,0 +1,191 @@
+<!-- THIS IS USED INSIDE HTML MACRO -->
+
+<div id="aui-message-bar"></div>  
+<script>
+function showWatchers(){
+ 	var spaceName= document.getElementById('spaceName').value;
+    console.info(spaceName);
+	AJS.$.ajax({
+		url: "/atlassian/rest/scriptrunner/latest/custom/getSpaceBlogWatchers",
+  		type: "GET",
+  		data: ({key : spaceName}),
+  		dataType: "json",
+  		success: function(msg){
+			window.watchers = msg;  		
+			console.log(msg);			
+			var html = "";
+			var count = 0;
+			for (let [key, value] of Object.entries(window.watchers)) {
+				html += value+"\n";
+				count++;
+			}
+			AJS.$("#watchers").text(html);
+		    AJS.$("#watcherCount").html(count);
+			AJS.$("#watcherCount").show();
+			AJS.$("#btnLoadWatchers").disable();
+			AJS.$("#groupForm").show();
+    	}
+	});
+}
+
+</script>
+
+<form class="aui">
+    <div class="field-group">
+        <label for="spaceName">Space<span class="aui-icon icon-required">required</span></label>
+        <input class="text" type="text" id="spaceName" name="spaceName" title="Space" placeholder="">
+ </div>
+
+ <div class="field-group">
+        <label for="watchers">Watchers<br/><span id="watcherCount" class="aui-lozenge aui-lozenge-success" style="display:none"></span></label>
+        <textarea class="textarea" name="watchers"
+                  id="watchers" placeholder=""></textarea>
+    </div>
+
+
+ <div class="buttons-container">
+        <div class="buttons">
+            <input class="button submit" type="submit" id="btnLoadWatchers" value="Load watchers" onclick="showWatchers();return false;">
+        </div>
+    </div>
+ </form>
+ 
+ 
+ 
+  
+<script>
+function loadMembers(){
+ 	var groupName= document.getElementById('groupName').value;
+    console.info(groupName);
+	AJS.$.ajax({
+		url: "/atlassian/rest/scriptrunner/latest/custom/getGroupMembers",
+  		type: "GET",
+  		data: ({groupName: groupName}),
+  		dataType: "json",
+  		success: function(msg){
+			window.groupMembers = msg;  		
+			console.log(msg);			
+			var html = "";
+			var count = 0;
+			for (let [key, value] of Object.entries(window.groupMembers)) {
+				html += value+"\n";
+				count++;
+			}
+			AJS.$("#groupMembers").text(html);
+		    AJS.$("#groupMemberCount").html(count);
+			AJS.$("#groupMemberCount").show();
+			AJS.$("#btnLoadMembers").disable();
+			diffMembers();
+    	}
+	});
+}
+
+function diffMembers(){
+	var watchingHtml = "";
+	var missingHtml = "";
+    var watchingCount = 0;
+    var missingCount = 0;
+	for (let [key, value] of Object.entries(window.groupMembers)) {
+		if(window.watchers[key]){
+		 	watchingHtml += value+"\n";
+			watchingCount ++;
+		} else {
+			missingHtml += value+"\n";
+			missingCount ++;
+		}
+ 	}
+	AJS.$("#groupMembersWatching").text(watchingHtml );
+    AJS.$("#groupMemberCountWatching").html(watchingCount );
+	AJS.$("#groupMemberCountWatching").show();
+	AJS.$("#groupMembersMissing").text(missingHtml );
+    AJS.$("#groupMemberCountMissing").html(missingCount );
+	AJS.$("#groupMemberCountMissing").show();
+	AJS.$("#diffForm").show();
+}
+
+function parseMembers(){
+    var input = AJS.$("#groupMembers").val().trim();
+    var tokens = input.split(/\t|\n/);
+    window.groupMembers = {}
+    for (i = 0; i < tokens.length; i+=2) { 
+        window.groupMembers[tokens[i]] = tokens[i+1];
+    }
+    AJS.$("#groupMemberCount").html(tokens.length/2);
+    AJS.$("#groupMemberCount").show();
+    diffMembers();
+}
+
+
+function addMembers(){
+	AJS.$("#btnAddMissing").disable();
+	var keys = []
+	var spaceName= document.getElementById('spaceName').value;
+	for (let [key, value] of Object.entries(window.groupMembers)) {
+		keys.push(key)
+	}
+	AJS.$.ajax({
+        url: "/atlassian/rest/scriptrunner/latest/custom/addBlogWatchers",
+          type: "POST",
+          data: ({space : spaceName, keys : keys}),
+          dataType: "json",
+          contentType: 'application/json',
+          success: function(msg){
+            AJS.messages.success({
+			    title: 'Watchers added.',
+    			body: '<p> You might want to refresh the page to check.<br/>Message from server<br/><pre>'+JSON.stringify(msg)+'</pre></p>'
+			});
+        	},
+		  error: function(msg){
+			AJS.messages.error({
+			    title: 'ERROR',
+    			body: 'Message from server<br/><pre>'+JSON.stringify(msg)+'</pre></p>'
+			});
+    	  },
+		  beforeSend: function(request) {
+            request.setRequestHeader("X-Atlassian-Token", "nocheck");
+          }
+    });
+}
+
+
+</script>
+
+<form class="aui" id="groupForm" style="display:none">
+    <div class="field-group">
+        <label for="groupName">Group Name<span class="aui-icon icon-required">required</span></label>
+        <input class="text" type="text" id="groupName" name="groupName" title="Group" placeholder="">
+ </div>
+
+ <div class="field-group">
+        <label for="groupMembers">Group Members<br/><span id="groupMemberCount" class="aui-lozenge aui-lozenge-success" style="display:none"></span></label>
+        <textarea class="textarea" name="groupMembers"
+                  id="groupMembers" placeholder=""></textarea>
+    </div>
+
+
+ <div class="buttons-container">
+        <div class="buttons">
+            <input class="button submit" type="submit" value="Load members" id="btnLoadMembers" onclick="loadMembers();return false;"/>
+			<input class="button submit" type="submit" value="Parse members" id="btnParseMembers" onclick="parseMembers();return false;"/>
+ </div>
+    </div>
+ </form>
+
+<form class="aui" id="diffForm" style="display:none">
+
+ <div class="field-group">
+        <label for="groupMembersWatching">Group Members already watching<br/><span id="groupMemberCountWatching" class="aui-lozenge aui-lozenge-success" style="display:none"></span></label>
+        <textarea class="textarea" name="groupMembersWatching"
+                  id="groupMembersWatching" placeholder=""></textarea>
+ </div>
+ <div class="field-group">
+        <label for="groupMembersMissing">Group Members missing<br/><span id="groupMemberCountMissing" class="aui-lozenge aui-lozenge-success" style="display:none"></span></label>
+        <textarea class="textarea" name="groupMembersMissing"
+                  id="groupMembersMissing" placeholder=""></textarea>
+ </div>
+ <div class="buttons-container">
+        <div class="buttons">
+			<input class="button submit" type="submit" value="Add missing watchers" id="btnAddMissing" onclick="addMembers();return false;">
+        </div>
+    </div>
+  </form>	
