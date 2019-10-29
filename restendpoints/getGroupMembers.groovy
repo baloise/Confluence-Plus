@@ -19,14 +19,14 @@ import com.atlassian.user.User
 
 
 getGroupMembers(httpMethod: "GET", groups: ["confluence-users"]) { MultivaluedMap queryParams, String body ->
-	GroupManager gman = getComponent(GroupManager.class)
+    GroupManager gman = getComponent(GroupManager.class)
 	UserManager uman = getComponent(UserManager.class)
 	
-	String groupName = queryParams.getFirst('groupName')
-	Group group = gman.getGroup(groupName)
-	Map users = gman.getMemberNames(group).toSet().collectEntries{
-		User user = uman.getUser(it)
-		["${user.name}": [email : user.email, name : user.fullName]]
-	}
-	return Response.ok(new JsonBuilder(users).toString()).header("Content-Type", "application/json").build()
+    String groupName = queryParams.getFirst('groupName')
+    Group group = gman.getGroup(groupName)
+    Map users = gman.getMemberNames(group).toSet().collectEntries{
+        User user = uman.getUser(it)
+        ["${user.name}": user.fullName]
+    }
+    return Response.ok(new JsonBuilder(users).toString()).header("Content-Type", "application/json").build()
 }
