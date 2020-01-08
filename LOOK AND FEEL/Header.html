@@ -1,0 +1,24 @@
+{html}
+<script>
+function AJSMeta(prop){
+    return AJS.$('meta[name="ajs-'+prop+'"]').attr("content");
+}
+
+AJS.toInit(function () {
+if(AJSMeta("browse-page-tree-mode") == "view"){
+ AJS.$(".aui-label").each(function( index ) { 
+    if(AJS.$(this).text()=="draft") {
+		AJS.$('#main-content').css(
+			{
+				"background-image" : "url('/atlassian/download/attachments/10649738/draft.png')", 
+				"background-repeat" : "no-repeat",
+				"background-position" : "center",				
+				"background-attachment" : "fixed "
+			}
+		);
+	}  
+})
+}
+});
+ </script>
+{html}
