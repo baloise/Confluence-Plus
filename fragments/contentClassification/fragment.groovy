@@ -85,9 +85,6 @@ String classification = propMan.getStringProperty(page, "com.baloise.classificat
 String warn = '';
 if('Confidential' == classification && !getComponent(ContentPermissionManager.class).getInheritedContentPermissions(page))
 warn =  'warnUnprotected();'
-if(page.id == 1836221614L)
-writer.write('''<script>''');
-else
 writer.write('''<section id="dialog-classify" class="aui-dialog2 aui-dialog2-medium aui-layer" role="dialog" aria-hidden="true">
 	<header class="aui-dialog2-header">
 		<h2 class="aui-dialog2-header-main">'''+local('title')+'''</h2>
