@@ -28,6 +28,31 @@ private Response ok(JsonBuilder jsonb) {
 	Response.ok(jsonb.toString()).header("Content-Type", "application/json").build()
 }
 
+private int getHistorySize(ContentPropertyManager propMan, Page page) {(propMan.getStringProperty(page, "com.baloise.classification.history.size" ) ?: 0 ) as int}
+private void writeHistory(ContentPropertyManager propMan, Page page, ConfluenceUser user, String classification) {
+	int histSize = getHistorySize(propMan, page)
+	Map history =  [
+		user : user.name,
+		time : System.currentTimeMillis() as String,
+		version : page.version as String,
+		classification : classification
+	]
+	propMan.setStringProperty(page, "com.baloise.classification.history."+histSize, history.inspect())
+	propMan.setStringProperty(page, "com.baloise.classification.history.size", ++histSize as String)
+}
+
+private List<Map> getHistory(ContentPropertyManager propMan, Page page) {
+	int histSize = getHistorySize(propMan, page)
+	List<Map> ret = []
+	for (int i = 0; i < histSize; i++) {
+		   Map m = (groovy.util.Eval.me(propMan.getStringProperty(page, "com.baloise.classification.history."+i)) as Map)
+		   m.time = m.time as long
+		   m.version = m.version as int
+		   ret << m
+	}
+	return ret
+}
+
 
 @BaseScript CustomEndpointDelegate delegate
 
