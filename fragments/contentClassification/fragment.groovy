@@ -83,7 +83,7 @@ PermissionHelper phelp = new PermissionHelper(
 String classification = propMan.getStringProperty(page, "com.baloise.classification") ?: "Internal";
 
 String warn = '';
-if('Confidential' == classification && !getComponent(ContentPermissionManager.class).getInheritedContentPermissions(page))
+if('Confidential' == classification && !(page.hasContentPermissions() || getComponent(ContentPermissionManager.class).getInheritedContentPermissionSets(page,true)))
 warn =  'warnUnprotected();'
 writer.write('''<section id="dialog-classify" class="aui-dialog2 aui-dialog2-medium aui-layer" role="dialog" aria-hidden="true">
 	<header class="aui-dialog2-header">
