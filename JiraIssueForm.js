@@ -1,3 +1,4 @@
+
 // quirky code for IE 11
 
 var JiraIssueForm = new JiraIssueFormLoader();
@@ -93,13 +94,23 @@ function JiraIssueFormClass(projectId, issueTypeId, data, restUrl) {
             + extro  
         }
         if(["array", "priority"].indexOf(type) > -1 && field.allowedValues) {
-        	var html = intro + '<aui-select class="medium-long-field" '+ inputAttribs+'/>';
+        	var selectTag;
+        	var optionTag;
+        	if(params.multiple != false && "array" == type) {
+        		inputAttribs += ' multiple="" ';
+        		selectTag = 'select';
+        		optionTag = 'option';
+        	} else {
+        		selectTag = 'aui-select';
+            	optionTag = 'aui-option';
+            }
+        	var html = intro + '<'+selectTag+' class="medium-long-field" '+ inputAttribs+'>';
         	field.allowedValues.forEach(function(allowedValue){
         		if(!params.allowedValues || params.allowedValues.indexOf(allowedValue.name) > -1){
-        			html+= '<aui-option value="'+allowedValue.id+'">'+allowedValue.name.replace(" & ", " and ")+'</aui-option>';
+        			html+= '<'+optionTag+' value="'+allowedValue.id+'">'+allowedValue.name.replace(" & ", " and ")+'</'+optionTag+'>';
         		}
             }.bind(this));
-            return html + '</aui-select>' + extro
+            return html + '</'+selectTag+'>' + extro
         }
         console.error( "Unkown field type", type, field);
         return null;
@@ -136,13 +147,28 @@ function JiraIssueFormClass(projectId, issueTypeId, data, restUrl) {
     	const ifc = this;
     	const button = $("#create_"+uid)
     	const form = $('#form_'+uid);
-
+		$("select[multiple]", form).auiSelect2({
+			width: '350px' 
+		});
     	form.serializeData = function() {
     		// lazy initialize form.fields because of aui-select 
     		if(!form.fields) form.fields =  $("input,textarea,select", form);
     		const data = {fields : {}};
     		form.fields.each(function( index, field ) {
+         
     			if(!field.name) return;
+          var jfield = $(field)
+				 console.log(field.name, jfield.attr("multiple"), field)
+				if(jfield.attr("multiple") != null) {
+					var vals = jfield.find(':selected');
+					if(vals.length){
+					    data.fields[field.name] = []
+						vals.each(function( index, value ) {
+							data.fields[field.name].push({id : $(value).attr('value')});
+						});
+					}
+					return;
+				}
     			var val = $(field).val();
       	      	val = (val || '').trim() 
       	      	if(!val) return;
