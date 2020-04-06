@@ -157,8 +157,7 @@ function JiraIssueFormClass(projectId, issueTypeId, data, restUrl) {
     		form.fields.each(function( index, field ) {
          
     			if(!field.name) return;
-          var jfield = $(field)
-				 console.log(field.name, jfield.attr("multiple"), field)
+    			var jfield = $(field)
 				if(jfield.attr("multiple") != null) {
 					var vals = jfield.find(':selected');
 					if(vals.length){
@@ -260,6 +259,8 @@ function JiraIssueFormClass(projectId, issueTypeId, data, restUrl) {
 	        			});
 	        		}
 	    			form.get(0).reset();
+	    			$("select[multiple]", form).select2("val", "");
+	    			form.checkEnabled();
 	    			form.fields.prop("disabled",false);
 	      		}
 	    	});
@@ -268,11 +269,11 @@ function JiraIssueFormClass(projectId, issueTypeId, data, restUrl) {
     	
     	const requiredFields = $("input,textarea,select", $("#form_"+uid+" .required"));
     	
-    	var checkEnabled = function() {
+    	form.checkEnabled = function() {
     		button.prop("disabled",!allRequired());
     	}
-    	requiredFields.change(checkEnabled);
-    	requiredFields.keyup(checkEnabled);  
+    	requiredFields.change(form.checkEnabled);
+    	requiredFields.keyup(form.checkEnabled);  
 
     	function allRequired() {
     	  var c = 0;
@@ -284,7 +285,7 @@ function JiraIssueFormClass(projectId, issueTypeId, data, restUrl) {
     	  });
     	  return c == 0; 
     	}
-        checkEnabled();
+    	form.checkEnabled();
         form.uid = uid;
         form.button=button; 
         form.requiredFields = requiredFields;
