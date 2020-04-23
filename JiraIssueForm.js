@@ -106,8 +106,9 @@ function JiraIssueFormClass(projectId, issueTypeId, data, restUrl) {
             }
         	var html = intro + '<'+selectTag+' class="medium-long-field" '+ inputAttribs+'>';
         	field.allowedValues.forEach(function(allowedValue){
-        		if(!params.allowedValues || params.allowedValues.indexOf(allowedValue.name) > -1){
-        			html+= '<'+optionTag+' value="'+allowedValue.id+'">'+allowedValue.name.replace(" & ", " and ")+'</'+optionTag+'>';
+        		var name = allowedValue.name || allowedValue.value
+        		if(!params.allowedValues || params.allowedValues.indexOf(name) > -1){
+        			html+= '<'+optionTag+' value="'+allowedValue.id+'">'+name.replace(" & ", " and ")+'</'+optionTag+'>';
         		}
             }.bind(this));
             return html + '</'+selectTag+'>' + extro
