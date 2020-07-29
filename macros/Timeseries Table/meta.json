@@ -1,0 +1,8 @@
+{
+ "Key" : "time-series-table",
+ "Description" : "",
+ "Body type" : "None",
+ "Output type" : "Inline",
+ "Parameters" : [{"names" : ["string", "mandatory"]}],
+ "Lazy loaded" : false
+}
