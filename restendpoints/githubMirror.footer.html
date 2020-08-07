@@ -1,0 +1,31 @@
+{html}
+<script>
+AJS.toInit(function(){
+	if($("#main-content").text().trim() != ""){
+	  var path = $("#title-text").text().trim().split("|")
+	  path[2] = path.slice(2).join("/")
+	  console.log(path)
+	  var githubEditURL = "https://github.com/"+path[0]+"/"+path[1]+"/edit/master/"+path[2]
+	  if(path[2].indexOf("wiki/") == 0) {
+		githubEditURL =  "https://github.com/"+path[0]+"/"+path[1]+"/"+path[2]+"/_edit"
+	  } 
+	   console.log(githubEditURL)
+	  
+	  var htmlButton =  '<li class="ajs-button normal">'
+	+'<a  href="'+githubEditURL +'" rel="nofollow" class="aui-button aui-button-subtle edit" accesskey="e" title="Edit (e)" resolved="" style="float: right;">'
+	+'	<span>'
+	+'    	<span class="aui-icon aui-icon-small aui-iconfont-edit"></span>'
+	+'        <u>E</u>dit'
+	+'    </span>'
+	+'</a>'
+	+'</li>';
+
+		AJS.$("#navigation .ajs-menu-bar").prepend(AJS.$(htmlButton));
+		AJS.$(window).keyup(function(e) {
+			if(document.activeElement.id != "wysiwygTextarea_ifr" && document.activeElement.tagName != "INPUT" && e.key == 'e') {window.location.href = githubEditURL};	
+		});
+		AJS.$("#action-view-history-link").attr("href", githubEditURL.replace("/edit/", "/commits/").replace("/_edit", "/_history"))
+	}
+});
+ </script>
+{html}
