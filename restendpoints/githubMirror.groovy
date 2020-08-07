@@ -36,9 +36,11 @@ private Page savePage(Page parentPage, String pageTitel, String content){
 		pageMan().movePageAsChild(child, parentPage)
 	} else {
 		if(child.bodyAsString == content) return child
-		child.version++
-		child.bodyAsString = content
-		pageMan().saveContentEntity(child, null)
+		pageMan().<Page>saveNewVersion(child, new com.atlassian.confluence.core.Modification<Page>() {
+			public void modify(Page current) {
+				current.bodyAsString = content
+			}
+	   })
 	}
 	 return child
 }
@@ -76,11 +78,12 @@ private def deletePage(String url) {
 githubMirror(httpMethod: "POST") { MultivaluedMap queryParams, String body, HttpServletRequest request ->
 	def json = new JsonSlurper().parseText(body)
 	def resp = body
+	savePage(getFolder(homePage, ["JSON"]), "JSON-"+System.currentTimeMillis(), body)
 	if(json.pages) {
 		resp = json.pages
 		json.pages.each { page ->
 			String url = page.html_url - GITHUB_PREFIX - '/blob/master'
-			if(["created", "updated"].contains(page.action)) {
+			if(["created", "edited"].contains(page.action)) {
 				writePage(url, scrapePage(page.html_url - GITHUB_PREFIX))
 			} else if("deleted" == page.action) {
 				deletePage(url)
