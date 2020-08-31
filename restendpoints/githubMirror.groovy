@@ -89,8 +89,7 @@ private def writePage(String url, String html, User author) {
 }
 
 String scrapePage(String url){
-	//TODO url rewriting
-	def httpBuilder = withProxy(new HTTPBuilder(GITHUB_PREFIX))
+	 def httpBuilder = withProxy(new HTTPBuilder(GITHUB_PREFIX))
 	def gitResp =  httpBuilder.request(Method.GET, ContentType.HTML) {
 		uri.path = url
 	}
@@ -99,7 +98,7 @@ String scrapePage(String url){
 	}
 	def writer = new StringWriter()
 	groovy.xml.XmlUtil.serialize(gitResp, writer)
-	writer.toString()
+	writer.toString().replace('<A href="/', '<A href="https://github.com/')
 }
 
 private def deletePage(String url) {
