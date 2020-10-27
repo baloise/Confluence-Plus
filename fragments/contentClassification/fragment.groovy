@@ -11,7 +11,7 @@ import com.atlassian.confluence.user.AuthenticatedUserThreadLocal
 import com.atlassian.confluence.user.ConfluenceUser
 import com.atlassian.confluence.core.ContentPropertyManager
 import com.atlassian.confluence.core.ContentPermissionManager
-import com.atlassian.confluence.languages.LocaleManager;
+import com.atlassian.confluence.languages.LocaleManager
 
 i18n = [
 	de : [
