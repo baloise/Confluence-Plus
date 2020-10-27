@@ -220,7 +220,8 @@ function setPageClassification(classification) {
  }
 
 function warnUnprotected(){
-    var warning= AJS.$('<div class="aui-message aui-message-warning"><p class="title"><strong>'''+local('warn_title')+'''</strong></p><p>'''+local('warn_text')+'''</p></div>');
+    if($("#warnUnprotected").length) return;
+    var warning= AJS.$('<div class="aui-message aui-message-warning" id="warnUnprotected"><p class="title"><strong>'''+local('warn_title')+'''</strong></p><p>'''+local('warn_text')+'''</p></div>');
     AJS.$("#main-content").prepend(warning);
 }
 
