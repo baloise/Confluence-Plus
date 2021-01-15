@@ -14,9 +14,10 @@ import com.atlassian.confluence.setup.bandana.KeyedBandanaContext
 
 CONTEXT = new ConfluenceBandanaContext("com.bal.time.series")
 private ConfluenceBandanaContext CONTEXT(){CONTEXT as ConfluenceBandanaContext}
+CONTEXT_UNIQUE = new ConfluenceBandanaContext("com.bal.time.series.unique")
+private ConfluenceBandanaContext CONTEXT_UNIQUE(){CONTEXT_UNIQUE as ConfluenceBandanaContext}
 bandanaMan = getComponent(BandanaManager.class)
 private BandanaManager bandanaMan(){bandanaMan as BandanaManager}
-private String uniqueKey(String name) { "unIq_€."+name}
 
 private Response ok(entity){
 	Response.ok(new JsonBuilder(entity).toString()).header("Content-Type", "application/json").build()
@@ -32,15 +33,16 @@ private void save(String name, TreeMap<Long,Integer> history) {
    
 private void reset(String name) {
 	bandanaMan().removeValue(CONTEXT(), name)
+	bandanaMan().removeValue(CONTEXT_UNIQUE(), name)
 }
 
 private TreeSet<String> loadUnique(String name) {
-    (bandanaMan().getValue(CONTEXT(), uniqueKey(name)) ?: []) as TreeSet<String>
+    (bandanaMan().getValue(CONTEXT_UNIQUE(), name) ?: []) as TreeSet<String>
 }
 
 private int unique(String name, String value) {
 	TreeSet<String> values =  loadUnique(name) 
-	if(values.add(value)) bandanaMan().setValue(CONTEXT(), uniqueKey(name), values)
+	if(values.add(value)) bandanaMan().setValue(CONTEXT_UNIQUE(), name, values)
 	return values.size()
 }
 
