@@ -48,7 +48,7 @@ zoomButton.click(function() {
 });
 
 AJS.$(window).keyup(function(e) {
-	if(document.activeElement.id != "wysiwygTextarea_ifr" && document.activeElement.tagName != "INPUT") {
+	if(document.activeElement.id != "wysiwygTextarea_ifr" && document.activeElement.tagName != "INPUT" && document.activeElement.tagName != "TEXTAREA") {
 		if( e.key == 'z' ) {
 			zoomButton.click();
 		} 
