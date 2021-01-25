@@ -1,0 +1,60 @@
+{html}
+<script>
+AJS.toInit(function() {
+if(navigator.userAgent.indexOf("MSIE") > 0) {
+	console.log("browser not supported by zoom: " + navigator.userAgent);
+    return;
+}
+$(".ajs-menu-bar").append('<button id="zoomBotton" class="aui-button aui-button-subtle ghx-compact-toggle js-compact-toggle" style="margin-left:4px" title="Hide the header ( Z )"><span id="zoomBottonIcon" class="aui-icon aui-icon aui-icon-small aui-iconfont-vid-full-screen-on"></span></button>');
+
+var zoomButton = AJS.$("#zoomBotton");
+var trigger =$(".expand-collapse-trigger");
+var zoomBottonIcon = $("#zoomBottonIcon");
+zoomButton.tooltip();
+var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutationRecord) {
+        const style = mutationRecord.target.style
+        
+        if(style["z-index"] == "0") {
+          style.top = "-60px"
+        } else if(style["z-index"] == "100" && parseInt(style.top) > 0) {
+          style.top = "0px"
+        }
+    });    
+});
+
+var target = document.getElementById('main-header');
+
+zoomButton.click(function() {
+	this.fullscreen = !this.fullscreen
+	if(this.fullscreen) {
+		observer.observe(target, { attributes : true, attributeFilter : ['style'] });
+		$(".ia-splitter-left").hide();
+		this.mainMarinLeft = $("#main").css("margin-left");
+		$("#main").css("margin-left", "0px");
+		$("#footer").hide();
+		$("#header").hide();
+	} else {
+        observer.disconnect();
+		$("#header").show();		
+		$(".ia-splitter-left").show();
+		$("#main").css("margin-left", this.mainMarinLeft);
+		$("#footer").show();
+	}
+   
+    zoomButton.attr("title", (this.fullscreen ? "Show" : "Hide" )+" the header ( Z )");
+	zoomBottonIcon.addClass(this.fullscreen ? 'aui-iconfont-vid-full-screen-off' : 'aui-iconfont-vid-full-screen-on').removeClass(this.fullscreen ? 'aui-iconfont-vid-full-screen-on' : 'aui-iconfont-vid-full-screen-off');
+	
+});
+
+AJS.$(window).keyup(function(e) {
+	if(document.activeElement.id != "wysiwygTextarea_ifr" && document.activeElement.tagName != "INPUT") {
+		if( e.key == 'z' ) {
+			zoomButton.click();
+		} 
+	};	
+});
+
+});
+</script>
+{html}
