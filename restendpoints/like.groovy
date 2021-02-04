@@ -44,7 +44,7 @@ like(httpMethod: "GET", groups: ["confluence-users"]) { MultivaluedMap queryPara
 		if(!user) return "<li><pre>'${userName}'</pre></li>"
 		"""<li>
 	<div class="avatar-container">
-		<a href="/atlassian/display/~${userName}"><img class="like-user-avatar" src="${userAccessor.getUserProfilePicture(user).uriReference}"></a>
+		<a href="/atlassian/display/~${userName}" data-username="${userName}"><img class="like-user-avatar" src="${userAccessor.getUserProfilePicture(user).uriReference}"></a>
 	</div>
 	<div class="like-user">
 		<a class="like-user-link" href="/atlassian/display/~${userName}">${user.fullName}</a>
