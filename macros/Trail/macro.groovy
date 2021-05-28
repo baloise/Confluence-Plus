@@ -26,6 +26,11 @@ import com.atlassian.confluence.search.v2.query.*
 import com.atlassian.confluence.search.service.ContentTypeEnum
 import com.atlassian.confluence.search.v2.sort.*
 
+    
+String panel(String content){
+        Boolean.valueOf(parameters.panel) ? "<div class='trailPanel'>$content</div>" : content
+}    
+
 String macroName = 'com-baloise-trail'
 
 SearchManager searchManager = getComponent(SearchManager)
@@ -37,7 +42,7 @@ try {
         String liClass = res.urlPath == page.urlPath ? ' class="aui-nav-selected"' :'' 
         """<li${liClass}><a href="${contextPath}${res.urlPath}">${res.displayTitle}</a></li>"""
     }.join("\t\t\t\n")
-    return """<nav class="aui-navgroup aui-navgroup-${parameters.orientation}">
+    return panel("""<nav class="aui-navgroup aui-navgroup-${parameters.orientation}">
    	 <div class="aui-navgroup-inner">
         <div class="aui-navgroup">
 			<div class="aui-nav-heading"><strong>${parameters.topic}</strong></div>
@@ -46,7 +51,7 @@ ${LIs}
             </ul>
         </div>
     </div>
-</nav>"""
+</nav>""")
 } catch (InvalidSearchException e) {
     // We can't recover from this so we wrap the error in a runtime exception
     throw new RuntimeException(e)
