@@ -1,6 +1,6 @@
 {
  "Key" : "com-baloise-trail",
- "Description" : "Register page in a topic and share links to related pages",
+ "Description" : "Register page in a topic and share links to related pages. See <a href='/atlassian/x/fBWtfw'>Documentation</a>",
  "Body type" : "None",
  "Output type" : "Block",
  "Parameters" : [
