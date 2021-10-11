@@ -121,18 +121,22 @@ githubMirror(httpMethod: "POST") { MultivaluedMap queryParams, String body, Http
 				deletePage(url)
 			}
 		}
-    } else if(json.commits && json.ref == "refs/heads/master") {
-        json.commits.each { commit ->
-            ["added", "modified"].each { commit[it].each{ path ->
-                    if(isDoc(path)){
-                        writePage(json.repository.full_name + '/'+path, scrapePage("https://github.com/${json.repository.full_name}/blob/master/${path}"), mapUser(commit.author.name))            
-                    }
-            }}
-            commit.removed.each { path ->
-                 if(isDoc(path)){
-                     deletePage(json.repository.full_name + '/'+path)
-                 }
-            }
+    } else if(json.commits) {
+        String branch = json.ref - "refs/heads/"
+        //TODO should get the default branch via API instead of hard coding
+        if(['main', 'master'].contains(branch)) {
+            json.commits.each { commit ->
+                ["added", "modified"].each { commit[it].each{ path ->
+                        if(isDoc(path)){
+                            writePage(json.repository.full_name + '/'+path, scrapePage("https://github.com/${json.repository.full_name}/blob/${branch}/${path}"), mapUser(commit.author.name))            
+                        }
+                }}
+                commit.removed.each { path ->
+                     if(isDoc(path)){
+                         deletePage(json.repository.full_name + '/'+path)
+                     }
+                }
+            }    
         }
     }
     
