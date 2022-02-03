@@ -38,7 +38,7 @@ SearchManager searchManager = getComponent(SearchManager)
 final ISearch search = new ContentSearch(BooleanQuery.composeAndQuery([new ContentTypeQuery(ContentTypeEnum.PAGE), new MacroUsageQuery(macroName), new LabelQuery(label)] as Set), TitleSort.ASCENDING, null, 0, 999)
 try {
     SearchResults searchResults = searchManager.search(search)
-    String LIs = searchResults.getAll().collect{ res ->
+    String LIs = searchResults.getAll().findAll{!it.spaceKey.endsWith('Archive')}.collect{ res ->
         String liClass = res.urlPath == page.urlPath ? ' class="aui-nav-selected"' :'' 
         """<li${liClass}><a href="${contextPath}${res.urlPath}">${res.displayTitle}</a></li>"""
     }.join("\t\t\t\n")
