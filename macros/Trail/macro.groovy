@@ -46,8 +46,8 @@ try {
    	 <div class="aui-navgroup-inner">
         <div class="aui-navgroup">
 			<div class="aui-nav-heading"><strong>${parameters.topic}</strong></div>
-            <ul class="aui-nav">
-${LIs}
+            <ul class="aui-nav" id="trail-${label}">
+				${LIs}
             </ul>
         </div>
     </div>
