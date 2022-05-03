@@ -1,0 +1,10 @@
+{
+ "Key" : "com-baloise-agereport",
+ "Description" : "shows age of pages with label",
+ "Body type" : "None",
+ "Output type" : "Inline",
+ "Parameters" : [
+ 					{"label" : ["string", "mandatory"]}
+ 				],
+ "Lazy loaded" : false
+}
