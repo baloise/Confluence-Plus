@@ -30,8 +30,12 @@ i18n = [
 		 secret_text : ' stehen nur einem eng begrenzten Kreis von Mitarbeitern zur Verfügung. Ihre Offenlegung hätte gravierende Konsequenzen für die Baloise zur Folge.',
 		 nopermit_title : 'Klassifizierung nicht möglich!',
 		 nopermit_text : 'Geheime Informationen dürfen nicht in Confluence gespeichert werden, da sie Datenträgerverschlüsselung voraussetzen.',
-		 warn_title : 'Vertrauliche Informationen müssen geschützt werden.',
-		 warn_text : 'Bitte schränken Sie den Zugriff auf diese Seite ein.',
+		 warn_title_confidential : 'Vertrauliche Informationen müssen geschützt werden.',
+		 warn_text_confidential : 'Bitte schränken Sie den Zugriff auf diese Seite ein.',
+		 warn_title_internal : 'Interne Informationen müssen verfügbar sein.',
+		 warn_text_internal : 'Bitte heben Sie die Zugriffsbeschränkungen auf diese Seite auf.',
+         warn_title_public : 'Öffentliche Informationen nicht publiziert.',
+		 warn_text_public : 'Confluence ist nicht öffentlich zugänglich.',
 		 update_OK : 'Klassifizierung wurde geändert in',
 		 update_KO : 'Klassifizierung konnte <b>nicht</b> geändert werden.',
 		 apply : 'Speichern',
@@ -53,8 +57,12 @@ i18n = [
 		secret_text : ' is only available to a tightly limited group of employees.',
 		nopermit_title : 'Classification not permitted!',
 		nopermit_text : 'Secret data must not be stored in Confluence, as it requires encrypted storage.',
-		warn_title : 'Confidential information needs to be protected',
-		warn_text : 'Please restrict access to this page.',
+		warn_title_confidential : 'Confidential information needs to be protected',
+		warn_text_confidential : 'Please restrict access to this page.',
+        warn_title_internal : 'Internal information needs to be accessible',
+		warn_text_internal : 'Please remove access restrictions from this page.',
+        warn_title_public : 'Public Informationen not published.',
+		warn_text_public : 'Confluence can not be accessed by the public.',
 		update_OK : 'Confidentiality classification set to',
 		update_KO : 'Confidentiality classification <b>not</b> updated.',
 		apply : 'Apply',
@@ -85,8 +93,14 @@ PermissionHelper phelp = new PermissionHelper(
 String classification = propMan.getStringProperty(page, "com.baloise.classification") ?: "Internal";
 
 String warn = '';
-if('Confidential' == classification && !(page.hasContentPermissions() || getComponent(ContentPermissionManager.class).getInheritedContentPermissionSets(page,true)))
-warn =  'warnUnprotected();'
+boolean isProtected = (page.hasContentPermissions() || getComponent(ContentPermissionManager.class).getInheritedContentPermissionSets(page,true))
+if('Confidential' == classification && !isProtected)
+    warn =  "warnClassification('${local('warn_title_confidential')}', '${local('warn_text_confidential')}');"
+else if('Public' == classification)
+    warn =  "warnClassification('${local('warn_title_public')}', '${local('warn_text_public')}');"
+else if('Internal' == classification && isProtected)
+    warn =  "warnClassification('${local('warn_title_internal')}', '${local('warn_text_internal')}');"
+
 writer.write('''<section id="dialog-classify" class="aui-dialog2 aui-dialog2-medium aui-layer" role="dialog" aria-hidden="true">
 	<header class="aui-dialog2-header">
 		<h2 class="aui-dialog2-header-main">'''+local('title')+'''</h2>
@@ -228,9 +242,9 @@ function setPageClassification(classification) {
    button.html(clabels.get(classification));
  }
 
-function warnUnprotected(){
-    if($("#warnUnprotected").length) return;
-    var warning= AJS.$('<div class="aui-message aui-message-warning" id="warnUnprotected"><p class="title"><strong>'''+local('warn_title')+'''</strong></p><p>'''+local('warn_text')+'''</p></div>');
+function warnClassification(title, text){
+    if($("#warnClassification").length) return;
+    var warning= AJS.$('<div class="aui-message aui-message-warning" id="warnClassification"><p class="title"><strong>'+title+'</strong></p><p>'+text+'</p></div>');
     AJS.$("#main-content").prepend(warning);
 }
 
