@@ -6,8 +6,9 @@ import com.atlassian.confluence.pages.Page
 import com.atlassian.confluence.user.AuthenticatedUserThreadLocal
 import com.atlassian.confluence.user.ConfluenceUser
 
-// next confluence version
+// confluence >= V7
 //String macroId = (context.getProperty("macroDefinition") as MacroDefinition).macroIdentifier.orElse(null)?.id
+// confluence < V7
 String macroId = (context.getProperty("macroDefinition") as MacroDefinition).macroId.getOrNull()?.id
 
 if(!macroId) return "no id"
