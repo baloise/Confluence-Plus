@@ -35,6 +35,7 @@ i18n = [
 		 update_OK : 'Klassifizierung wurde geändert in',
 		 update_KO : 'Klassifizierung konnte <b>nicht</b> geändert werden.',
 		 apply : 'Speichern',
+		 recursive : 'Auf alle Unterseiten anwenden',
 	],
 	en : [
 		title : 'Data confidentiality classification',
@@ -57,6 +58,7 @@ i18n = [
 		update_OK : 'Confidentiality classification set to',
 		update_KO : 'Confidentiality classification <b>not</b> updated.',
 		apply : 'Apply',
+		recursive : 'Apply to all sub pages',
 	],
 ]
 LocaleManager lman = getComponent(LocaleManager.class)
@@ -138,6 +140,12 @@ writer.write('''<section id="dialog-classify" class="aui-dialog2 aui-dialog2-med
         <div class="aui-dialog2-footer-actions">
             <button id="dialog-classify-submit-button" class="aui-button aui-button-primary">'''+local('apply')+'''</button>
         </div>
+		<div class="aui-dialog2-footer-hint">
+			<div class="checkbox">
+		    	<input class="checkbox" type="checkbox" name="recursiveClassification" id="recursiveClassification">
+		        <label for="recursiveClassification">'''+local('recursive')+'''</label>
+		    </div>
+		</div>
     </footer>
 </section>
 <script>
@@ -167,11 +175,12 @@ function storePageClassification(classification) {
         console.log("not storing current configuration");
         return false;
    }
-   console.log("storing classification " + classification);
+   var recursive = AJS.$("#recursiveClassification").prop('checked');
+   console.log("storing classification " + classification, "recursive "+recursive);
    AJS.$.ajax({
       url: AJSMeta("context-path")+"/rest/scriptrunner/latest/custom/pageClassification",
       type: "GET",
-      data: ({pageId : AJSMeta("page-id"), classification :classification}),
+      data: ({pageId : AJSMeta("page-id"), classification : classification, recursive : recursive}),
       dataType: "json",
       success: function(msg){
         AJS.$("#show-dialog-classify").attr("data-classification", classification);

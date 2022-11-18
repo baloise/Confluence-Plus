@@ -33,7 +33,10 @@ private Response ok(JsonBuilder jsonb) {
 
 pageClassification(httpMethod: "GET", groups: ["confluence-users"]) { MultivaluedMap queryParams, String body ->
     long pageId = queryParams.getFirst("pageId") as long
-    PageManager pageMan = getComponent(PageManager.class)
+    String classification = queryParams.getFirst("classification")
+	boolean recursive =  Boolean.valueOf(queryParams.getFirst("recursive"))
+	
+	PageManager pageMan = getComponent(PageManager.class)
     Page page = pageMan.getPage(pageId)
     
 	ConfluenceUser currentUser = AuthenticatedUserThreadLocal.get()
@@ -43,14 +46,17 @@ pageClassification(httpMethod: "GET", groups: ["confluence-users"]) { Multivalue
         getComponent(PageManager.class)
     )
 	
-    String classification = queryParams.getFirst("classification")
     ContentPropertyManager propMan = getComponent(ContentPropertyManager.class)
     
     if(classification) {
         if(!phelp.canEdit(currentUser, page)) return status(403, "Forbidden")
         List valid = ["Public","Internal","Confidential","Secret"]
         if(!valid.contains(classification)) return status(400, "Classification must be one of $valid")
-        propMan.setStringProperty(page, "com.baloise.classification", classification) 
+		List<Page> pages = recursive ? pageMan.getDescendants(page) << page : [page]
+		pages.each {p ->
+			propMan.setStringProperty(p, "com.baloise.classification", classification)
+		}
+		propMan.setStringProperty(page, "com.baloise.classification", classification) 
         return ok(new JsonBuilder([classification: classification]))
     } else {
         if(!phelp.canView(currentUser, page)) return status(403, "Forbidden")
