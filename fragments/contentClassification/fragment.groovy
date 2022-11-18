@@ -15,7 +15,7 @@ import com.atlassian.confluence.languages.LocaleManager
 
 i18n = [
 	de : [
-		 title : 'Klassifizierung der Vertraulichkeit der Daten',
+		 title : 'Klassifizierung der Informationen',
 		'public' : 'Öffentlich',
 		 internal : 'Intern',
 		 confidential : 'Vertraulich',
@@ -38,7 +38,7 @@ i18n = [
 		 recursive : 'Auf alle Unterseiten anwenden',
 	],
 	en : [
-		title : 'Data confidentiality classification',
+		title : 'Information classification',
 		'public' : 'Public',
 		internal : 'Internal',
 		confidential : 'Confidential',
