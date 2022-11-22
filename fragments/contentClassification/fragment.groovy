@@ -93,12 +93,13 @@ PermissionHelper phelp = new PermissionHelper(
 String classification = propMan.getStringProperty(page, "com.baloise.classification") ?: "Internal";
 
 String warn = '';
-boolean isProtected = (page.hasContentPermissions() || getComponent(ContentPermissionManager.class).getInheritedContentPermissionSets(page,true))
-if('Confidential' == classification && !isProtected)
+
+boolean isViewProtected = page.getContentPermissionSet("View") || getComponent(ContentPermissionManager.class).getInheritedContentPermissionSets(page,false)
+if('Confidential' == classification && !isViewProtected)
     warn =  "warnClassification('${local('warn_title_confidential')}', '${local('warn_text_confidential')}');"
 else if('Public' == classification)
     warn =  "warnClassification('${local('warn_title_public')}', '${local('warn_text_public')}');"
-else if('Internal' == classification && isProtected)
+else if('Internal' == classification && isViewProtected)
     warn =  "warnClassification('${local('warn_title_internal')}', '${local('warn_text_internal')}');"
 
 writer.write('''<section id="dialog-classify" class="aui-dialog2 aui-dialog2-medium aui-layer" role="dialog" aria-hidden="true">
