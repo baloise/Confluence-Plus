@@ -97,7 +97,7 @@ String warn = '';
 boolean isViewProtected = page.getContentPermissionSet("View") || getComponent(ContentPermissionManager.class).getInheritedContentPermissionSets(page,false)
 if('Confidential' == classification && !isViewProtected)
     warn =  "warnClassification('${local('warn_title_confidential')}', '${local('warn_text_confidential')}');"
-else if('Public' == classification)
+else if('Public' == classification && page.spaceKey != 'GITHUB')
     warn =  "warnClassification('${local('warn_title_public')}', '${local('warn_text_public')}');"
 else if('Internal' == classification && isViewProtected)
     warn =  "warnClassification('${local('warn_title_internal')}', '${local('warn_text_internal')}');"
