@@ -1,3 +1,4 @@
+// modified version of https://github.com/codazoda/mouse-highlighter/blob/master/highlight.js
 var mousePointerid = 'mousePointer';
 
 function mousePointer() {
