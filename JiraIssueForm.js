@@ -1,4 +1,4 @@
-
+ 
 // quirky code for IE 11
 
 var JiraIssueForm = new JiraIssueFormLoader();
@@ -93,7 +93,7 @@ function JiraIssueFormClass(projectId, issueTypeId, data, restUrl) {
             inputAttribs+'/>'
             + extro  
         }
-        if(["array", "priority"].indexOf(type) > -1 && field.allowedValues) {
+        if(["option", "array", "priority"].indexOf(type) > -1 && field.allowedValues) {
         	var selectTag;
         	var optionTag;
         	if(params.multiple != false && "array" == type) {
@@ -301,4 +301,4 @@ function JiraIssueFormClass(projectId, issueTypeId, data, restUrl) {
         this.uid = new Date().getTime();
         return form;
     }
-}
+} 
