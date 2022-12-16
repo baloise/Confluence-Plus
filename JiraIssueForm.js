@@ -84,7 +84,7 @@ function JiraIssueFormClass(projectId, issueTypeId, data, restUrl) {
         if("textarea"== type) {
         	return intro +
         	' <textarea class="textarea medium-long-field" rows="8"'+
-        		inputAttribs+'/></textarea>'
+        		inputAttribs+'/>'+(params.template||'')+'</textarea>'
         		+ extro  
         }
         if(["number", "string", ].indexOf(type) > -1) {
