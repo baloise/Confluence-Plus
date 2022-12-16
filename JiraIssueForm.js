@@ -90,7 +90,7 @@ function JiraIssueFormClass(projectId, issueTypeId, data, restUrl) {
         if(["number", "string", ].indexOf(type) > -1) {
             return intro +
             '<input class="text medium-long-field" type="'+type+'"'+
-            inputAttribs+'/>'
+            inputAttribs+' value="'+(params.template||'')+'"/>'
             + extro  
         }
         if(["option", "array", "priority"].indexOf(type) > -1 && field.allowedValues) {
