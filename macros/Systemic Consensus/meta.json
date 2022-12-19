@@ -1,0 +1,10 @@
+{
+ "Key" : "com-baloise-systemic-consensus",
+ "Description" : "",
+ "Body type" : "Plain text",
+ "Output type" : "Block",
+"Parameters" : [
+ 					{"subject" : ["string", "mandatory"]}
+ 				],
+ "Lazy loaded" : false
+}
