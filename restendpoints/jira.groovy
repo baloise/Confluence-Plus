@@ -39,7 +39,8 @@ JaxRsResponse service(MethodType httpMethod, HttpServletRequest request, String 
 	def appLink = appLinkService.getPrimaryApplicationLink(JiraApplicationType)
 	def applicationLinkRequestFactory = appLink.createAuthenticatedRequestFactory()
 	
-	def jiraRequest = applicationLinkRequestFactory.createRequest(httpMethod, request.queryString).addHeader("Content-Type", "application/json")
+	def jiraRequest = applicationLinkRequestFactory.createRequest(httpMethod, request.queryString)
+	request.headerNames.each { String name  -> jiraRequest.addHeader(name,request.getHeader(name)) }
 	if(body) jiraRequest.entity = body
 	
 	Response jiraResp = jiraRequest.executeAndReturn({it} as ReturningResponseHandler)
