@@ -68,7 +68,7 @@ Response voteParticipants(Map<String,String> params){
     }
 
     List<String> options = params.options.trim().split("\r?\n") as List
-    options.add("Status Quo")
+    options.add("none of the above")
 
     Map<String,Map<String,Integer>> option2username2vote = options.collectEntries { String option ->  
         [("$option" as String):loadVotes("$instanceId-$option-votes", propMan, ce)]
@@ -81,9 +81,11 @@ Response voteParticipants(Map<String,String> params){
     String html = """
     <div class="panelContent">
     <div  style="position: relative;">
-    <div class="buttons-container" style="position: absolute; right: 8px; top: 8px; z-index: 100;">
+    <div class="buttons-container" style="float:right; z-index: 100; height:32px;">
             <div class="buttons">
-            <button class="aui-button" data-instance-id="$instanceId" name="addRemoveParticipantToVote"><span class="aui-icon aui-icon-small $currentToggleIcon"></span></button>
+            <button class="aui-button" data-instance-id="$instanceId" name="addRemoveParticipantToVote">
+                <span class="aui-icon aui-icon-small $currentToggleIcon">${userNames.contains(currentUserName) ? 'Leave' : 'Join'}</span>
+                </button>
             <button class="aui-button" data-instance-id="$instanceId"  name="refreshVote"><span class="aui-icon aui-icon-small aui-iconfont-refresh">Refresh</span></button>
             </div>
     </div>
