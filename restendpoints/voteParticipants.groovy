@@ -57,7 +57,7 @@ Response voteParticipants(Map<String,String> params){
     String tmp = propMan.getTextProperty(ce, propKey)
     SortedSet<String> userNames = (tmp?.split(',') ?: [:]) as TreeSet
     userNames.remove("")
-    boolean changed = ("remove" != params.op) ? userNames.add(currentUserName) : userNames.remove(currentUserName)
+    boolean changed = "add" == params.op && userNames.add(currentUserName) || "remove" == params.op && userNames.remove(currentUserName)
     if(changed) propMan.setTextProperty(ce, propKey, userNames.join(','))
 
     if(params.vote) {
