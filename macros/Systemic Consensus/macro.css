@@ -1,0 +1,4 @@
+body.content-preview tbody,button {
+    display: none;
+    visibility: hidden;
+}
