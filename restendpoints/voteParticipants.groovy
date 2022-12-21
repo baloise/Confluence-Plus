@@ -68,7 +68,7 @@ Response voteParticipants(Map<String,String> params){
     }
 
     List<String> options = params.options.trim().split("\r?\n") as List
-    options.add("none of the above")
+    options.add("Status Quo")
 
     Map<String,Map<String,Integer>> option2username2vote = options.collectEntries { String option ->  
         [("$option" as String):loadVotes("$instanceId-$option-votes", propMan, ce)]
