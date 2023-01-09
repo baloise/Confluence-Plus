@@ -39,7 +39,10 @@ JaxRsResponse service(MethodType httpMethod, HttpServletRequest request, String 
 	def appLink = appLinkService.getPrimaryApplicationLink(JiraApplicationType)
 	def applicationLinkRequestFactory = appLink.createAuthenticatedRequestFactory()
 	
+	// do not copy all headers over. Only JSON request will pass.
+    // Otherwise HTTP status code 503 Service Unavailable will be sent
 	def jiraRequest = applicationLinkRequestFactory.createRequest(httpMethod, request.queryString).addHeader("Content-Type", "application/json")
+	
 	if(body) jiraRequest.entity = body
 	
 	Response jiraResp = jiraRequest.executeAndReturn({it} as ReturningResponseHandler)
