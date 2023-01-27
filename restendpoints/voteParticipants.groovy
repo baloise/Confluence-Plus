@@ -137,7 +137,7 @@ String createTableBody(String instanceId,SortedSet<String> userNames, List<Strin
             data-option="$option"
             data-voted="$vote"
             class="voteSelect"
-            placeholder="How high is your resistance?"
+            placeholder="My resistance"
         >""" + (0..10).collect{"<aui-option ${ it == vote ? 'selected' : '' }>$it</aui-option>"}.join('')+"</aui-select>"  :  (vote ?: '')
         }.join('</td><td>')+"</td>").toString()
     } + ['<td>&sum;</td><td>'+ options.collect {  String option -> "<span class='aui-lozenge  aui-lozenge-subtle ${getSumClass(option2sum,option)}'>${option2sum[option]}</span>"}.join('</td><td>')+'</td>'] 
