@@ -87,6 +87,7 @@ Response voteParticipants(Map<String,String> params){
                 <span class="aui-icon aui-icon-small $currentToggleIcon">${userNames.contains(currentUserName) ? 'Leave' : 'Join'}</span>
                 </button>
             <button class="aui-button" data-instance-id="$instanceId"  name="refreshVote"><span class="aui-icon aui-icon-small aui-iconfont-refresh">Refresh</span></button>
+            <button class="aui-button" name="help"><span class="aui-icon aui-icon-small aui-iconfont-new-help">Help</span></button>
             </div>
     </div>
     </div>

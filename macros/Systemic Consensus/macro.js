@@ -56,6 +56,10 @@ AJS.$(document).on('click', 'button[name="refreshVote"]', function() {
     }
 })
 
+AJS.$(document).on('click', 'button[name="help"]', function() {
+	window.open("https://en.wikipedia.org/wiki/Systemic_Consensing#Method", "Wikipedia - Systemic Consensing")
+})
+
 
 AJS.$(document).on('change', '.voteSelect', function() {
 	var instanceId = $(this).attr('data-instance-id')
