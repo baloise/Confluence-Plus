@@ -1,5 +1,4 @@
- 
-// quirky code for IE 11
+ // quirky code for IE 11
 
 var JiraIssueForm = new JiraIssueFormLoader();
 function JiraIssueFormLoader() {
@@ -295,10 +294,17 @@ function JiraIssueFormClass(projectId, issueTypeId, data, restUrl) {
     }
     
     this.append = function (selector, params) {
-    	params = params || {};
-    	$(selector).append(this.getForm(params));
-        const form = this.initForm(params);
+        // semaphor is a hack
+ 		var anchor = $(selector)
+		if(anchor.has("semaphor").length) {
+         console.log("semaphor present - skipping ", selector)
+         return
+		}
+        anchor.append("<semaphor></semaphor>")
+		params = params || {};      
+		anchor.append(this.getForm(params));         
+		const form = this.initForm(params);
         this.uid = new Date().getTime();
         return form;
     }
-} 
+}  
