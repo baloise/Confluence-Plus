@@ -1,0 +1,11 @@
+{
+ "Key" : "com-baloise-agendatimer",
+ "Name" : "Agenda Table",
+ "Description" : "Calculate start/end time from duration",
+ "Body type" : "Rich text",
+ "Output type" : "Inline",
+ "Parameters" : [
+ 					
+ 				],
+ "Lazy loaded" : false
+}
