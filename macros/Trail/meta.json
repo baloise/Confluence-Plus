@@ -6,7 +6,8 @@
  "Parameters" : [
  					{"topic" : ["string", "mandatory"]},
  					{"orientation" : ["enum", "horizontal,vertical"]},
- 					{"panel" : ["boolean"]}
+ 					{"panel" : ["boolean"]},
+ 					{"displayOnly" : ["boolean"]}
  				],
  "Lazy loaded" : false
 }

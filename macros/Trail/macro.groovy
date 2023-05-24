@@ -10,11 +10,18 @@ if(label.length() < minLength) return """<div class="aui-message aui-message-war
 </div>"""
 
 Page page = context.entity as Page
-if(!page.labels?.collect{l -> l.name}?.contains(label)) {
+boolean displayOnly = Boolean.valueOf(parameters.displayOnly)
+if(!displayOnly && !page.labels?.collect{l -> l.name}?.contains(label)) {
     LabelManager labelMan = getComponent(LabelManager.class)
     Label pLabel = labelMan.getLabel(label) ?: labelMan.createLabel(new Label(label, Namespace.GLOBAL)) 
     labelMan.addLabel(page,pLabel)
+} 
+if(displayOnly && page.labels?.collect{l -> l.name}?.contains(label)) {
+    LabelManager labelMan = getComponent(LabelManager.class)
+    Label pLabel = labelMan.getLabel(label) ?: labelMan.createLabel(new Label(label, Namespace.GLOBAL)) 
+    labelMan.removeLabel(page,pLabel)
 }
+
 
 import com.onresolve.scriptrunner.runner.ScriptRunnerImpl
 import com.atlassian.sal.api.ApplicationProperties
