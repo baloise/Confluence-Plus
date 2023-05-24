@@ -7,7 +7,8 @@
  					{"topic" : ["string", "mandatory"]},
  					{"orientation" : ["enum", "horizontal,vertical"]},
  					{"panel" : ["boolean"]},
- 					{"displayOnly" : ["boolean"]}
+ 					{"displayOnly" : ["boolean"]},
+ 					{"compact" : ["boolean"]}
  				],
  "Lazy loaded" : false
 }

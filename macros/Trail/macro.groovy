@@ -35,7 +35,8 @@ import com.atlassian.confluence.search.v2.sort.*
 
     
 String panel(String content){
-        Boolean.valueOf(parameters.panel) ? "<div class='trailPanel'>$content</div>" : content
+        String compact = Boolean.valueOf(parameters.compact) ? " compact" : ""
+        Boolean.valueOf(parameters.panel) ? "<div class='trailPanel$compact'>$content</div>" : content
 }    
 
 String macroName = 'com-baloise-trail'
