@@ -5,7 +5,7 @@
  "Body type" : "Rich text",
  "Output type" : "Inline",
  "Parameters" : [
- 					
+ 					startTime, durationColumnName, showDuration
  				],
  "Lazy loaded" : false
 }
