@@ -33,7 +33,7 @@ private void save(String name, TreeMap<Long,Integer> history) {
     bandanaMan().setValue(CONTEXT(), name, history)
 }
 
-private void reset(String name) {
+private void rm(String name) {
     bandanaMan().removeValue(CONTEXT(), name)
     bandanaMan().removeValue(CONTEXT_UNIQUE(), name)
 }
@@ -97,8 +97,8 @@ timeseries(httpMethod: "GET") { MultivaluedMap<String, String> queryParams, Stri
     if(!names)
         return ok(bandanaMan().getKeys(CONTEXT()))
 
-    if(queryParams.containsKey("reset")) {
-        names.each { reset(it) }
+    if(queryParams.containsKey("rm")) {
+        names.each { rm(it) }
         return ok(names.collectEntries{ ["$it": [:]] })
     }
 
