@@ -38,6 +38,16 @@ private void rm(String name) {
     bandanaMan().removeValue(CONTEXT_UNIQUE(), name)
 }
 
+private void mv(String from, String to) {
+    cp(from, to)
+	rm(from)
+}
+
+private void cp(String from, String to) {
+    bandanaMan().setValue(CONTEXT(), to, load(from))
+    bandanaMan().setValue(CONTEXT_UNIQUE(), to, loadUnique(from))
+}
+
 private TreeSet<String> loadUnique(String name) {
     (bandanaMan().getValue(CONTEXT_UNIQUE(), name) ?: []) as TreeSet<String>
 }
@@ -100,6 +110,19 @@ timeseries(httpMethod: "GET") { MultivaluedMap<String, String> queryParams, Stri
     if(queryParams.containsKey("rm")) {
         names.each { rm(it) }
         return ok(names.collectEntries{ ["$it": [:]] })
+    }
+
+    if(queryParams.containsKey("mv")) {
+        String from = names.first()
+        mv(from, queryParams.getFirst("mv"))
+        return ok(["$from": [:]])
+    }
+
+    if(queryParams.containsKey("cp")) {
+        String from = names.first()
+        String to = queryParams.getFirst("cp")
+        cp(from, to)
+        return ok(["$from": load(to)])
     }
 
     // NEW FIXINC HANDLER
