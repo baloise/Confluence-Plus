@@ -48,6 +48,11 @@ private void cp(String from, String to) {
     bandanaMan().setValue(CONTEXT_UNIQUE(), to, loadUnique(from))
 }
 
+private Map formatDates(Map<Long,Integer> history, String format) {
+    def sdf = new java.text.SimpleDateFormat(format)
+    history.collectEntries { ts, val -> [sdf.format(new Date(ts as long)), val] }
+}
+
 private TreeSet<String> loadUnique(String name) {
     (bandanaMan().getValue(CONTEXT_UNIQUE(), name) ?: []) as TreeSet<String>
 }
@@ -103,6 +108,8 @@ private TreeMap<Long,Integer> fixIncreasing(String name) {
 timeseries(httpMethod: "GET") { MultivaluedMap<String, String> queryParams, String body ->
 
     List<String> names = queryParams.get('name')
+    String dateFormat = queryParams.containsKey("formatDate") ? (queryParams.getFirst("formatDate")?.trim() ?: "yyyy-MM-dd HH:mm") : null
+    def fmt = { Map m -> dateFormat ? formatDates(m, dateFormat) : m }
 
     if(!names)
         return ok(bandanaMan().getKeys(CONTEXT()))
@@ -122,25 +129,25 @@ timeseries(httpMethod: "GET") { MultivaluedMap<String, String> queryParams, Stri
         String from = names.first()
         String to = queryParams.getFirst("cp")
         cp(from, to)
-        return ok(["$from": load(to)])
+        return ok(["$from": fmt(load(to))])
     }
 
     // NEW FIXINC HANDLER
     if(queryParams.containsKey("fixInc")) {
-        return ok(names.collectEntries { ["$it" : fixIncreasing(it)] })
+        return ok(names.collectEntries { ["$it" : fmt(fixIncreasing(it))] })
     }
 
     String value = queryParams.getFirst('value')?.trim()
 
     if(value) {
         return ok(names.collectEntries{
-            ["$it" : save(it,
+            ["$it" : fmt(save(it,
                           (queryParams.getFirst('date') ?: System.currentTimeMillis()) as long,
-                          value)]
+                          value))]
         })
     } else if(queryParams.containsKey("unique")) {
         return ok(names.collectEntries{ ["$it" : loadUnique(it)] })
     } else {
-        return ok(names.collectEntries{ ["$it" : load(it)] })
+        return ok(names.collectEntries{ ["$it" : fmt(load(it))] })
     }
 }
