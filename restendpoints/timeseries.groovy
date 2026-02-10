@@ -108,7 +108,7 @@ private TreeMap<Long,Integer> fixIncreasing(String name) {
 timeseries(httpMethod: "GET") { MultivaluedMap<String, String> queryParams, String body ->
 
     List<String> names = queryParams.get('name')
-    String dateFormat = queryParams.containsKey("formatDate") ? (queryParams.getFirst("formatDate")?.trim() ?: "yyyy-MM-dd HH:mm") : null
+    String dateFormat = queryParams.containsKey("formatDate") ? (queryParams.getFirst("formatDate")?.trim() ?: "yyyy-MM-dd HH:mm:ss.SSS") : null
     def fmt = { Map m -> dateFormat ? formatDates(m, dateFormat) : m }
 
     if(!names)
@@ -140,10 +140,10 @@ timeseries(httpMethod: "GET") { MultivaluedMap<String, String> queryParams, Stri
     String value = queryParams.getFirst('value')?.trim()
 
     if(value) {
+        String time = queryParams.getFirst('time')
+        long date = time ? (time as long) * 1000 : (queryParams.getFirst('date') ?: System.currentTimeMillis()) as long
         return ok(names.collectEntries{
-            ["$it" : fmt(save(it,
-                          (queryParams.getFirst('date') ?: System.currentTimeMillis()) as long,
-                          value))]
+            ["$it" : fmt(save(it, date, value))]
         })
     } else if(queryParams.containsKey("unique")) {
         return ok(names.collectEntries{ ["$it" : loadUnique(it)] })
