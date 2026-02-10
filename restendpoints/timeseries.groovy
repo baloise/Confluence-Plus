@@ -13,27 +13,29 @@ import com.atlassian.confluence.setup.bandana.KeyedBandanaContext
 @BaseScript CustomEndpointDelegate delegate
 
 CONTEXT = new ConfluenceBandanaContext("com.bal.time.series")
-private ConfluenceBandanaContext CONTEXT(){CONTEXT as ConfluenceBandanaContext}
+private ConfluenceBandanaContext CONTEXT(){ CONTEXT as ConfluenceBandanaContext }
 CONTEXT_UNIQUE = new ConfluenceBandanaContext("com.bal.time.series.unique")
-private ConfluenceBandanaContext CONTEXT_UNIQUE(){CONTEXT_UNIQUE as ConfluenceBandanaContext}
+private ConfluenceBandanaContext CONTEXT_UNIQUE(){ CONTEXT_UNIQUE as ConfluenceBandanaContext }
 bandanaMan = getComponent(BandanaManager.class)
-private BandanaManager bandanaMan(){bandanaMan as BandanaManager}
+private BandanaManager bandanaMan(){ bandanaMan as BandanaManager }
 
 private Response ok(entity){
-	Response.ok(new JsonBuilder(entity).toString()).header("Content-Type", "application/json").build()
+    Response.ok(new JsonBuilder(entity).toString())
+        .header("Content-Type", "application/json")
+        .build()
 }
 
 private TreeMap<Long,Integer> load(String name) {
-	(bandanaMan().getValue(CONTEXT(), name) ?: [:]) as TreeMap<Long,Integer>
+    (bandanaMan().getValue(CONTEXT(), name) ?: [:]) as TreeMap<Long,Integer>
 }
 
 private void save(String name, TreeMap<Long,Integer> history) {
-	 bandanaMan().setValue(CONTEXT(), name, history)
+    bandanaMan().setValue(CONTEXT(), name, history)
 }
-   
+
 private void reset(String name) {
-	bandanaMan().removeValue(CONTEXT(), name)
-	bandanaMan().removeValue(CONTEXT_UNIQUE(), name)
+    bandanaMan().removeValue(CONTEXT(), name)
+    bandanaMan().removeValue(CONTEXT_UNIQUE(), name)
 }
 
 private TreeSet<String> loadUnique(String name) {
@@ -41,45 +43,81 @@ private TreeSet<String> loadUnique(String name) {
 }
 
 private int unique(String name, String value) {
-	TreeSet<String> values =  loadUnique(name) 
-	if(values.add(value)) bandanaMan().setValue(CONTEXT_UNIQUE(), name, values)
-	return values.size()
+    TreeSet<String> values = loadUnique(name)
+    if(values.add(value)) bandanaMan().setValue(CONTEXT_UNIQUE(), name, values)
+    return values.size()
 }
 
 private int convert(String name, String value, Integer lastValue) {
-	if(value == "inc") 
-		return lastValue ? ++lastValue : 1
-	if(value.integer) 
-		return value as int
-	return unique(name, value)
+    if(value == "inc")
+        return lastValue ? ++lastValue : 1
+    if(value.integer)
+        return value as int
+    return unique(name, value)
 }
 
 private TreeMap<Long,Integer> save(String name, Long date, String value) {
-	TreeMap<Long,Integer> history = load(name)
+    TreeMap<Long,Integer> history = load(name)
     Integer lastValue = history.lastEntry()?.value
-	int converted = convert(name, value, lastValue)
-	if(lastValue != converted) {
-		history.put(date, converted)
-		save(name, history)
-	}
-	return history
+    int converted = convert(name, value, lastValue)
+    if(lastValue != converted) {
+        history.put(date, converted)
+        save(name, history)
+    }
+    return history
+}
+
+//
+// NEW: Fix series into a strictly increasing sequence
+//
+private TreeMap<Long,Integer> fixIncreasing(String name) {
+    TreeMap<Long,Integer> history = load(name)
+    if(history.isEmpty()) return history
+
+    Integer newVal = null
+    TreeMap<Long,Integer> fixed = new TreeMap<>()
+
+    history.each { ts, val ->
+        if(newVal == null) {
+            newVal = val
+        } else {
+            newVal = newVal + 1
+        }
+        fixed.put(ts, newVal)
+    }
+
+    save(name, fixed)
+    return fixed
 }
 
 timeseries(httpMethod: "GET") { MultivaluedMap<String, String> queryParams, String body ->
-	List<String> names = queryParams.get('name')
-	
-	if(!names) return ok(bandanaMan().getKeys(CONTEXT()))
-	if(queryParams.containsKey("reset")) {
-		names.each{reset(it)}
-		return ok(names.collectEntries{["$it" : [:]]})
-	} 
-	
-	String value = queryParams.getFirst('value')?.trim()
-	if(value) {
-		return ok(names.collectEntries{["$it" : save(it, (queryParams.getFirst('date') ?: System.currentTimeMillis()) as long, value)]})
-	} else if(queryParams.containsKey("unique")) {
-        return ok(names.collectEntries{["$it" : loadUnique(it)]})
+
+    List<String> names = queryParams.get('name')
+
+    if(!names)
+        return ok(bandanaMan().getKeys(CONTEXT()))
+
+    if(queryParams.containsKey("reset")) {
+        names.each { reset(it) }
+        return ok(names.collectEntries{ ["$it": [:]] })
+    }
+
+    // NEW FIXINC HANDLER
+    if(queryParams.containsKey("fixInc")) {
+        return ok(names.collectEntries { ["$it" : fixIncreasing(it)] })
+    }
+
+    String value = queryParams.getFirst('value')?.trim()
+
+    if(value) {
+        return ok(names.collectEntries{
+            ["$it" : save(it,
+                          (queryParams.getFirst('date') ?: System.currentTimeMillis()) as long,
+                          value)]
+        })
+    } else if(queryParams.containsKey("unique")) {
+        return ok(names.collectEntries{ ["$it" : loadUnique(it)] })
     } else {
-		return ok(names.collectEntries{["$it" : load(it)]})
-	}	
+        return ok(names.collectEntries{ ["$it" : load(it)] })
+    }
 }
